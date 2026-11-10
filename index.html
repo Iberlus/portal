@@ -538,12 +538,13 @@ function viewFacturacion(){
         if (!ml.length) continue;
         const k = S.fyear + "-" + m, o = S.fopen.has(k);
         const cur = ml.reduce((s,i) => s + i.total, 0);
+        const pm = ml.filter(i => i.pend > 0.004), pmT = pm.reduce((s,i) => s + i.pend, 0);
         const prev = mine.filter(i => i.date.getFullYear() === S.fyear - 1 && i.date.getMonth() === m).reduce((s,i) => s + i.total, 0);
         let yoy = (S.fyear - 1) + ': ';
         if (prev){ const pc = (cur - prev) / Math.abs(prev) * 100; yoy += eur(prev) + ' · <span class="' + (pc >= 0 ? "up" : "down") + '">' + (pc >= 0 ? "+" : "−") + num(Math.abs(Math.round(pc))) + ' %</span>'; }
         else yoy += 'sin facturas';
         h += '<div class="month" data-mk="' + k + '" open-state="' + (o?1:0) + '"><button type="button" data-fm="' + k + '" aria-expanded="' + o + '">' + chev +
-             '<span class="mcol"><span class="mname">' + MESES[m] + '</span><span class="yoy">' + yoy + '</span></span><span class="date">' + ml.length + ' fras.</span>' +
+             '<span class="mcol"><span class="mname">' + MESES[m] + '</span><span class="yoy">' + yoy + '</span>' + (pm.length ? '<span class="yoy" style="color:var(--bad);font-weight:600">Pendiente: ' + eur(pmT) + ' · ' + pm.length + (pm.length === 1 ? ' fra.' : ' fras.') + '</span>' : '') + '</span><span class="date">' + ml.length + ' fras.</span>' +
              amt2(cur, ml.reduce((s,i) => s + i.base, 0)) + '</button>' +
              (o ? '<div class="inner">' + ml.map(frow).join("") + '</div>' : '') + '</div>';
       }
