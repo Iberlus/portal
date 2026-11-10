@@ -129,9 +129,9 @@ nav.bottom button[aria-selected="true"]{color:var(--accent)}
 .yoy{font-size:11.5px;color:var(--muted);font-weight:500;font-variant-numeric:tabular-nums}
 .yoy .up{color:var(--good);font-weight:600} .yoy .down{color:var(--bad);font-weight:600}
 .pill.giro{color:var(--giro);background:var(--giro-soft)}
-.fwrap.open,.inv[open-state="1"]{background:var(--open);box-shadow:inset 3px 0 0 var(--accent)}
-.fwrap.open .lines,.inv[open-state="1"] .lines{background:transparent}
-.fwrap.open .frow,.inv[open-state="1"]>button{background:transparent}
+.fwrap.open,.inv[open-state="1"]{position:relative}
+.fwrap.open::before,.inv[open-state="1"]::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent);z-index:1;pointer-events:none}
+.fwrap.open .lines{background:var(--open)}
 .inv .ident{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;min-width:0;flex:1}
 .age{font-weight:600;color:var(--warn)} .age.old{color:var(--bad)} .age.mute{color:var(--muted);font-weight:500}
 .frow .who{font-weight:600;min-width:0;overflow-wrap:anywhere}
@@ -723,7 +723,7 @@ function viewPreguntas(){
   view.querySelectorAll("[data-cli]").forEach(b => b.onclick = () => openClient(b.dataset.cli, S.pq === "artcli" ? "articulos" : "facturas", S.pq === "artcli" ? "uds" : null));
 }
 
-const APP_VERSION = "11/11/2026 · Pendiente · giro";
+const APP_VERSION = "11/11/2026 · Líneas en blanco";
 function viewCuenta(){
   const u = S.user || {};
   view.innerHTML = '<div class="acc"><div class="card"><h3>' + esc(u.nombre || "Tu cuenta") + '</h3><div class="count" style="margin:0">' + esc(u.email || "") + '</div></div>' +
