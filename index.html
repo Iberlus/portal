@@ -186,6 +186,12 @@ nav.bottom button[aria-selected="true"]{color:var(--accent)}
 .acc{display:flex;flex-direction:column;gap:12px}
 .acc .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px}
 .acc h3{margin:0;font-family:var(--f-display);font-size:16px}
+.pcard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px;margin-top:14px}
+.pcard h3{margin:0;font-family:var(--f-display);font-size:16px}
+.pcard textarea{font:inherit;font-size:15px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);resize:vertical;min-height:70px}
+.pcard textarea:focus{outline:2px solid var(--accent);outline-offset:1px}
+.sugrow{border-top:1px solid var(--line);padding-top:8px;font-size:13.5px}
+.client-head p{white-space:normal}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 
@@ -232,6 +238,10 @@ nav.bottom button[aria-selected="true"]{color:var(--accent)}
     <button id="navFact" type="button" role="tab" aria-selected="false" data-sec="facturacion">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>
       Facturación
+    </button>
+    <button id="navPreg" type="button" role="tab" aria-selected="false" data-sec="preguntas">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.2a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.3-2.4 3.9"/><path d="M12 17.2h.01"/></svg>
+      Preguntas
     </button>
     <button id="navAlmacen" type="button" role="tab" aria-selected="false" data-sec="almacen">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9.5 12 4l9 5.5V20H3z"/><path d="M7 20v-6h10v6"/><path d="M7 17h10"/></svg>
@@ -580,6 +590,135 @@ function viewFacturacion(){
   }
 }
 
+/* ---------- Preguntas ---------- */
+const PREGUNTAS = [
+  { id: "artcli", t: "¿Qué artículos compra más un cliente?", d: "Eliges el cliente y ves sus artículos, de más a menos unidades." },
+  { id: "topcli", t: "¿Qué clientes me compran más?", d: "Por importe facturado en el año, con IVA." },
+  { id: "freq",   t: "¿Qué clientes me compran más a menudo?", d: "Por número de facturas en el año y cada cuántos días compran." },
+  { id: "quien",  t: "¿Quién compra este artículo?", d: "Eliges el artículo y ves qué clientes lo compran, con el último precio." },
+  { id: "topart", t: "¿Qué he vendido más?", d: "Artículos más vendidos este mes, este año o el año pasado." },
+  { id: "baja",   t: "¿Qué clientes compran menos que el año pasado?", d: "Mismo periodo del año pasado frente a este año, hasta hoy." }
+];
+const pqBack = () => '<button class="back" type="button" id="pqBack"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg>Preguntas</button>';
+const pqTitle = id => '<div class="client-head"><h2>' + esc((PREGUNTAS.find(p => p.id === id) || {}).t || "") + '</h2></div>';
+const openClient = (code, tab, sort) => { S.client = code; S.ctab = tab || "facturas"; if (sort) S.asort = sort; S.year = null; S.open = new Set(); S.sec = "clientes"; S.scrollEnd = tab !== "articulos"; render(); if (tab === "articulos") window.scrollTo(0,0); };
+function pqYears(){ return [...new Set(S.data.all.filter(i => i.date).map(i => i.date.getFullYear()))].sort((a,b) => b - a); }
+function pqChips(opts, cur, attr){ return '<div class="years">' + opts.map(o => '<button class="chipbtn" type="button" ' + attr + '="' + esc(o[0]) + '" aria-pressed="' + (String(o[0]) === String(cur)) + '">' + esc(o[1]) + '</button>').join("") + '</div>'; }
+function pqRow(name, sub, right, attrs){ return '<button class="row" type="button" ' + (attrs || "") + '><div class="main"><div class="name" style="white-space:normal">' + name + '</div><div class="sub" style="white-space:normal">' + sub + '</div></div><div class="right" style="color:var(--ink)">' + right + '</div>' + chev + '</button>'; }
+function priceHtml(price, dto){ const neto = price * (1 - dto / 100); return dto ? '<s style="color:var(--muted)">' + eur(price) + '</s><br><span class="dto">−' + num(dto) + ' %</span><b>' + eur(neto) + '</b>' : '<b>' + eur(price) + '</b>'; }
+
+function viewPreguntas(){
+  if (!S.pq){
+    let h = '<div class="client-head"><h2>Preguntas</h2><p>Elige una pregunta. Las respuestas salen de tus datos de Factusol.</p></div><div class="list" style="margin-top:12px">' +
+      PREGUNTAS.map(p => pqRow(esc(p.t), esc(p.d), "", 'data-pq="' + p.id + '"')).join("") + '</div>';
+    h += '<form class="pcard" id="sugForm"><h3>¿Qué pregunta te gustaría tener?</h3><p class="count" style="margin:0">Escríbela y le llega a Dani para añadirla.</p>' +
+      '<textarea id="sugTxt" maxlength="500" rows="3" placeholder="Por ejemplo: ¿qué clientes no han comprado copas este año?" required></textarea>' +
+      '<button class="btn" type="submit">Enviar a Dani</button><div class="msg" id="sugMsg" role="status"></div></form>';
+    if (S.user && S.user.admin) h += '<div class="pcard" id="sugList"><h3>Preguntas propuestas</h3><div class="count" style="margin:0">Cargando…</div></div>';
+    view.innerHTML = h;
+    view.querySelectorAll("[data-pq]").forEach(b => b.onclick = () => { S.pq = b.dataset.pq; S.pqQ = ""; S.pqArt = null; render(); window.scrollTo(0,0); });
+    document.getElementById("sugForm").onsubmit = async ev => {
+      ev.preventDefault();
+      const t = document.getElementById("sugTxt").value.trim(), m = document.getElementById("sugMsg");
+      if (!t) return;
+      m.className = "msg"; m.textContent = "Enviando…";
+      try {
+        await db.collection("sugerencias").add({ email: S.user.email.toLowerCase(), nombre: S.user.nombre || "", texto: t, fecha: firebase.firestore.FieldValue.serverTimestamp() });
+        m.className = "msg ok"; m.textContent = "Enviada. Gracias."; ev.target.reset();
+      } catch(e){ m.className = "msg err"; m.textContent = "No se pudo enviar (" + (e.code || "error") + ")."; }
+    };
+    if (S.user && S.user.admin){
+      db.collection("sugerencias").orderBy("fecha", "desc").limit(50).get().then(snap => {
+        const box = document.getElementById("sugList"); if (!box) return;
+        const rows = []; snap.forEach(d => { const x = d.data(); rows.push('<div class="sugrow"><b>' + esc(x.nombre || x.email) + '</b> · ' + (x.fecha ? fdate(x.fecha.toDate()) : "") + '<br>' + esc(x.texto) + '</div>'); });
+        box.innerHTML = '<h3>Preguntas propuestas</h3>' + (rows.length ? rows.join("") : '<div class="count" style="margin:0">Todavía no hay ninguna.</div>');
+      }).catch(() => { const box = document.getElementById("sugList"); if (box) box.innerHTML = '<h3>Preguntas propuestas</h3><div class="count" style="margin:0">No se pudieron leer.</div>'; });
+    }
+    return;
+  }
+  const id = S.pq; let h = pqBack() + pqTitle(id);
+  const all = S.data.all.filter(i => i.date), years = pqYears();
+  if (!S.pqYear || !years.includes(S.pqYear)) S.pqYear = years[0];
+  const nameOf = code => { const c = S.data.byCode.get(code); return c ? c.name : code; };
+
+  if (id === "artcli"){
+    const q = norm(S.pqQ || "");
+    const list = S.data.clients.filter(c => c.nInv && (!q || norm(c.name + " " + c.fiscal + " " + c.code + " " + c.pob).includes(q))).sort((a,b) => a.name.localeCompare(b.name, "es")).slice(0, 60);
+    h += '<div class="search"><input id="pqq" type="search" placeholder="Busca el cliente" value="' + esc(S.pqQ || "") + '" autocomplete="off" aria-label="Buscar cliente"></div>';
+    h += '<div class="list">' + (list.length ? list.map(c => pqRow(esc(c.name), esc([c.code, c.pob].filter(Boolean).join(" · ")), "", 'data-cli="' + esc(c.code) + '"')).join("") : '<div class="empty">Ningún cliente coincide.</div>') + '</div>';
+  }
+  else if (id === "topcli" || id === "freq"){
+    h += pqChips(years.map(y => [y, String(y)]), S.pqYear, "data-py");
+    const m = new Map();
+    all.filter(i => i.date.getFullYear() === S.pqYear).forEach(i => { const e = m.get(i.client) || { code: i.client, tot: 0, n: 0, dates: [] }; e.tot += i.total; e.n++; e.dates.push(+i.date); m.set(i.client, e); });
+    let rows = [...m.values()];
+    rows.forEach(e => { const d = [...new Set(e.dates)].sort((a,b) => a - b); e.every = d.length > 1 ? Math.round((d[d.length-1] - d[0]) / 864e5 / (d.length - 1)) : null; });
+    if (id === "topcli") rows.sort((a,b) => b.tot - a.tot); else rows.sort((a,b) => b.n - a.n || (a.every ?? 1e9) - (b.every ?? 1e9));
+    const tot = rows.reduce((s,e) => s + e.tot, 0);
+    h += '<p class="count">' + rows.length + ' clientes con facturas en ' + S.pqYear + (id === "topcli" ? ' · ' + eur(tot) + ' con IVA' : '') + '</p>';
+    h += '<div class="list">' + (rows.length ? rows.slice(0, 100).map((e, k) => pqRow((k + 1) + '. ' + esc(nameOf(e.code)),
+        e.n + (e.n === 1 ? ' factura' : ' facturas') + (e.every ? ' · cada ' + e.every + ' días' : ''),
+        id === "topcli" ? '<b>' + eur(e.tot) + '</b><br><small style="color:var(--muted)">' + (tot ? num(Math.round(e.tot / tot * 1000) / 10) + ' %' : '') + '</small>' : '<b>' + e.n + '</b>',
+        'data-cli="' + esc(e.code) + '"')).join("") : '<div class="empty">Sin facturas ese año.</div>') + '</div>';
+  }
+  else if (id === "quien"){
+    if (!S.pqArt){
+      const arts = new Map(); all.forEach(i => i.lines.forEach(l => { if (l.code && !arts.has(l.code)) arts.set(l.code, l.desc); }));
+      const words = norm(S.pqQ || "").split(/\s+/).filter(Boolean);
+      const list = words.length ? [...arts.entries()].filter(([c,d]) => { const k = norm(c + " " + d); return words.every(w => k.includes(w)); }).slice(0, 60) : [];
+      h += '<div class="search"><input id="pqq" type="search" placeholder="Busca el artículo por código o descripción" value="' + esc(S.pqQ || "") + '" autocomplete="off" aria-label="Buscar artículo"></div>';
+      h += words.length ? '<div class="list">' + (list.length ? list.map(([c,d]) => pqRow(esc(d || c), '<span style="font-family:var(--f-mono)">' + esc(c) + '</span>', "", 'data-art="' + esc(c) + '"')).join("") : '<div class="empty">Ninguno de tus clientes ha comprado un artículo así.</div>') + '</div>'
+        : '<div class="note">Escribe parte del código o de la descripción (por ejemplo <b>copa gastro</b>). Solo salen artículos que hayan comprado tus clientes.</div>';
+    } else {
+      const m = new Map(); let desc = "";
+      all.slice().sort((a,b) => a.date - b.date).forEach(i => i.lines.forEach(l => { if (l.code !== S.pqArt) return; desc = l.desc || desc;
+        const e = m.get(i.client) || { code: i.client, qty: 0 }; e.qty += l.qty; e.date = i.date; e.price = l.price; e.dto = l.dto; m.set(i.client, e); }));
+      const rows = [...m.values()].sort((a,b) => b.date - a.date);
+      h += '<p class="count"><span style="font-family:var(--f-mono)">' + esc(S.pqArt) + '</span> · ' + esc(desc) + ' · ' + rows.length + (rows.length === 1 ? ' cliente' : ' clientes') + ' · <button class="linkbtn" id="pqOtro" type="button">otro artículo</button></p>';
+      h += '<div class="list">' + rows.map(e => pqRow(esc(nameOf(e.code)), 'última compra ' + fdate(e.date) + ' · ' + num(e.qty) + ' uds en total', priceHtml(e.price, e.dto), 'data-cli="' + esc(e.code) + '"')).join("") + '</div>';
+    }
+  }
+  else if (id === "topart"){
+    const now = new Date(), y = now.getFullYear();
+    if (!["mes","anio","ant"].includes(S.pqPer)) S.pqPer = "anio";
+    if (!["imp","uds"].includes(S.pqSort)) S.pqSort = "imp";
+    h += pqChips([["mes","Este mes"],["anio","Este año"],["ant","Año " + (y - 1)]], S.pqPer, "data-pper");
+    h += pqChips([["imp","Por importe"],["uds","Por unidades"]], S.pqSort, "data-psort");
+    const inPer = d => S.pqPer === "mes" ? d.getFullYear() === y && d.getMonth() === now.getMonth() : S.pqPer === "anio" ? d.getFullYear() === y : d.getFullYear() === y - 1;
+    const m = new Map();
+    all.filter(i => inPer(i.date)).forEach(i => i.lines.forEach(l => { if (!l.code) return; const e = m.get(l.code) || { code: l.code, desc: l.desc, qty: 0, imp: 0, cli: new Set() }; e.qty += l.qty; e.imp += l.imp; e.cli.add(i.client); m.set(l.code, e); }));
+    const rows = [...m.values()].sort(S.pqSort === "uds" ? (a,b) => b.qty - a.qty : (a,b) => b.imp - a.imp);
+    h += '<p class="count">' + rows.length + ' artículos · importes sin IVA</p>';
+    h += '<div class="list">' + (rows.length ? rows.slice(0, 100).map((e, k) => pqRow((k + 1) + '. ' + esc(e.desc || e.code),
+        '<span style="font-family:var(--f-mono)">' + esc(e.code) + '</span> · ' + e.cli.size + (e.cli.size === 1 ? ' cliente' : ' clientes'),
+        '<b>' + (S.pqSort === "uds" ? num(e.qty) + ' uds' : eur(e.imp)) + '</b><br><small style="color:var(--muted)">' + (S.pqSort === "uds" ? eur(e.imp) : num(e.qty) + ' uds') + '</small>',
+        'data-art2="' + esc(e.code) + '"')).join("") : '<div class="empty">Sin ventas en ese periodo.</div>') + '</div>';
+  }
+  else if (id === "baja"){
+    const now = new Date(), y = now.getFullYear(), lim = new Date(y - 1, now.getMonth(), now.getDate(), 23, 59);
+    const m = new Map();
+    all.forEach(i => { const d = i.date; let k = null;
+      if (d.getFullYear() === y && d <= now) k = "cur"; else if (d.getFullYear() === y - 1 && d <= lim) k = "prev";
+      if (!k) return; const e = m.get(i.client) || { code: i.client, cur: 0, prev: 0 }; e[k] += i.total; m.set(i.client, e); });
+    const rows = [...m.values()].filter(e => e.prev > 0 && e.cur < e.prev).sort((a,b) => (b.prev - b.cur) - (a.prev - a.cur));
+    h += '<p class="count">Del 1 de enero al ' + now.toLocaleDateString("es-ES",{day:"numeric",month:"long"}) + ', ' + (y - 1) + ' frente a ' + y + ' · ' + rows.length + ' clientes compran menos · con IVA</p>';
+    h += '<div class="list">' + (rows.length ? rows.slice(0, 100).map(e => { const pc = Math.round((e.cur - e.prev) / e.prev * 100);
+        return pqRow(esc(nameOf(e.code)), (y - 1) + ': ' + eur(e.prev) + ' → ' + y + ': ' + eur(e.cur), '<b style="color:var(--bad)">−' + num(Math.abs(pc)) + ' %</b><br><small style="color:var(--muted)">−' + eur(e.prev - e.cur) + '</small>', 'data-cli="' + esc(e.code) + '"'); }).join("")
+      : '<div class="empty">Ningún cliente compra menos que el año pasado en este periodo.</div>') + '</div>';
+  }
+  view.innerHTML = h;
+  document.getElementById("pqBack").onclick = () => { if (S.pq === "quien" && S.pqArt){ S.pqArt = null; } else { S.pq = null; } render(); window.scrollTo(0,0); };
+  const inp = document.getElementById("pqq");
+  if (inp){ let t; inp.oninput = () => { clearTimeout(t); t = setTimeout(() => { S.pqQ = inp.value; const pos = inp.selectionStart; render(); const n = document.getElementById("pqq"); if (n){ n.focus(); try { n.setSelectionRange(pos, pos); } catch(e){} } }, 180); }; }
+  view.querySelectorAll("[data-py]").forEach(b => b.onclick = () => { S.pqYear = +b.dataset.py; render(); });
+  view.querySelectorAll("[data-pper]").forEach(b => b.onclick = () => { S.pqPer = b.dataset.pper; render(); });
+  view.querySelectorAll("[data-psort]").forEach(b => b.onclick = () => { S.pqSort = b.dataset.psort; render(); });
+  view.querySelectorAll("[data-art]").forEach(b => b.onclick = () => { S.pqArt = b.dataset.art; render(); window.scrollTo(0,0); });
+  view.querySelectorAll("[data-art2]").forEach(b => b.onclick = () => { S.pq = "quien"; S.pqArt = b.dataset.art2; render(); window.scrollTo(0,0); });
+  const o = document.getElementById("pqOtro"); if (o) o.onclick = () => { S.pqArt = null; render(); };
+  view.querySelectorAll("[data-cli]").forEach(b => b.onclick = () => openClient(b.dataset.cli, S.pq === "artcli" ? "articulos" : "facturas", S.pq === "artcli" ? "uds" : null));
+}
+
 function viewCuenta(){
   const u = S.user || {};
   view.innerHTML = '<div class="acc"><div class="card"><h3>' + esc(u.nombre || "Tu cuenta") + '</h3><div class="count" style="margin:0">' + esc(u.email || "") + '</div></div>' +
@@ -616,6 +755,7 @@ function render(){
   document.querySelectorAll("nav.bottom button").forEach(b => b.setAttribute("aria-selected", b.dataset.sec === S.sec));
   if (S.sec === "almacen") return viewAlmacen();
   if (!S.data) return;
+  if (S.sec === "preguntas") return viewPreguntas();
   if (S.sec === "facturacion") return viewFacturacion();
   S.client ? viewClient() : viewClients();
 }
