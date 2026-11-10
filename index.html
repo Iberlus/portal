@@ -611,29 +611,9 @@ function viewPreguntas(){
   if (!S.pq){
     let h = '<div class="client-head"><h2>Preguntas</h2><p>Elige una pregunta. Las respuestas salen de tus datos de Factusol.</p></div><div class="list" style="margin-top:12px">' +
       PREGUNTAS.map(p => pqRow(esc(p.t), esc(p.d), "", 'data-pq="' + p.id + '"')).join("") + '</div>';
-    h += '<form class="pcard" id="sugForm"><h3>¿Qué pregunta te gustaría tener?</h3><p class="count" style="margin:0">Escríbela y le llega a Dani para añadirla.</p>' +
-      '<textarea id="sugTxt" maxlength="500" rows="3" placeholder="Por ejemplo: ¿qué clientes no han comprado copas este año?" required></textarea>' +
-      '<button class="btn" type="submit">Enviar a Dani</button><div class="msg" id="sugMsg" role="status"></div></form>';
-    if (S.user && S.user.admin) h += '<div class="pcard" id="sugList"><h3>Preguntas propuestas</h3><div class="count" style="margin:0">Cargando…</div></div>';
+    h += '<div class="pcard"><h3>¿Echas en falta alguna pregunta?</h3><p class="count" style="margin:0">Díselo a Dani y la añadimos.</p></div>';
     view.innerHTML = h;
     view.querySelectorAll("[data-pq]").forEach(b => b.onclick = () => { S.pq = b.dataset.pq; S.pqQ = ""; S.pqArt = null; render(); window.scrollTo(0,0); });
-    document.getElementById("sugForm").onsubmit = async ev => {
-      ev.preventDefault();
-      const t = document.getElementById("sugTxt").value.trim(), m = document.getElementById("sugMsg");
-      if (!t) return;
-      m.className = "msg"; m.textContent = "Enviando…";
-      try {
-        await db.collection("sugerencias").add({ email: S.user.email.toLowerCase(), nombre: S.user.nombre || "", texto: t, fecha: firebase.firestore.FieldValue.serverTimestamp() });
-        m.className = "msg ok"; m.textContent = "Enviada. Gracias."; ev.target.reset();
-      } catch(e){ m.className = "msg err"; m.textContent = "No se pudo enviar (" + (e.code || "error") + ")."; }
-    };
-    if (S.user && S.user.admin){
-      db.collection("sugerencias").orderBy("fecha", "desc").limit(50).get().then(snap => {
-        const box = document.getElementById("sugList"); if (!box) return;
-        const rows = []; snap.forEach(d => { const x = d.data(); rows.push('<div class="sugrow"><b>' + esc(x.nombre || x.email) + '</b> · ' + (x.fecha ? fdate(x.fecha.toDate()) : "") + '<br>' + esc(x.texto) + '</div>'); });
-        box.innerHTML = '<h3>Preguntas propuestas</h3>' + (rows.length ? rows.join("") : '<div class="count" style="margin:0">Todavía no hay ninguna.</div>');
-      }).catch(() => { const box = document.getElementById("sugList"); if (box) box.innerHTML = '<h3>Preguntas propuestas</h3><div class="count" style="margin:0">No se pudieron leer.</div>'; });
-    }
     return;
   }
   const id = S.pq; let h = pqBack() + pqTitle(id);
