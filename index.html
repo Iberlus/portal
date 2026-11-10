@@ -255,7 +255,7 @@ nav.bottom button[aria-selected="true"]{color:var(--accent)}
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="factura.js"></script>
+<script src="factura.js?v=2026-11-11"></script>
 <script>
 (function(){
 "use strict";
@@ -699,6 +699,7 @@ function viewPreguntas(){
   view.querySelectorAll("[data-cli]").forEach(b => b.onclick = () => openClient(b.dataset.cli, S.pq === "artcli" ? "articulos" : "facturas", S.pq === "artcli" ? "uds" : null));
 }
 
+const APP_VERSION = "11/11/2026 · Preguntas al final";
 function viewCuenta(){
   const u = S.user || {};
   view.innerHTML = '<div class="acc"><div class="card"><h3>' + esc(u.nombre || "Tu cuenta") + '</h3><div class="count" style="margin:0">' + esc(u.email || "") + '</div></div>' +
@@ -707,7 +708,7 @@ function viewCuenta(){
     '<label class="fld" for="pwNew">Contraseña nueva (mínimo 8 caracteres)<input id="pwNew" type="password" autocomplete="new-password" minlength="8" required></label>' +
     '<label class="fld" for="pwNew2">Repite la contraseña nueva<input id="pwNew2" type="password" autocomplete="new-password" minlength="8" required></label>' +
     '<button class="btn" type="submit">Guardar contraseña</button><div class="msg" id="pwMsg" role="status"></div></form>' +
-    '<div class="card"><button class="btn" id="logout" type="button" style="background:var(--slate)">Salir</button></div></div>';
+    '<div class="card"><button class="btn" id="logout" type="button" style="background:var(--slate)">Salir</button><div class="count" style="margin:8px 0 0">Versión de la app: ' + APP_VERSION + '</div></div></div>';
   document.getElementById("logout").onclick = () => auth.signOut();
   document.getElementById("pwForm").onsubmit = async ev => {
     ev.preventDefault();
