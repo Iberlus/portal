@@ -19,18 +19,18 @@ html{padding-top:env(safe-area-inset-top,0px)} body{margin:0} [hidden]{display:n
 :root{
   --bg:#F3F5F9; --surface:#FFFFFF; --ink:#16213A; --muted:#5D6678; --line:#DDE2EA;
   --navy:#1F3864; --navy-ink:#FFFFFF; --slate:#44546A; --brand:#E4068A; --brand2:#00BFFF; --accent:var(--brand); --accent-soft:color-mix(in srgb,var(--brand) 9%,#FFFFFF); --on-accent:#FFFFFF;
-  --good:#1E7B4E; --warn:#A35C00; --bad:#B42318; --chip:#EEF1F6;
+  --good:#1E7B4E; --warn:#A35C00; --bad:#B42318; --chip:#EEF1F6; --open:#FBFCFE; --giro:#1D5FB8; --giro-soft:#E6EFFB;
   --f-display:"Space Grotesk",system-ui,sans-serif; --f-body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
   --f-mono:ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#0E1420; --surface:#162034; --ink:#E6EBF4; --muted:#98A2B6; --line:#26324A;
   --navy:#1B2D52; --navy-ink:#E6EBF4; --slate:#30405C; --accent:color-mix(in srgb,var(--brand) 45%,#FFFFFF); --accent-soft:color-mix(in srgb,var(--brand) 30%,#162034); --on-accent:#0E1420;
-  --good:#5CC290; --warn:#E3A24A; --bad:#F2877D; --chip:#1E2A42; color-scheme:dark}}
+  --good:#5CC290; --warn:#E3A24A; --bad:#F2877D; --chip:#1E2A42; --open:#1C2840; --giro:#8DB8F2; --giro-soft:#1C2C4A; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0E1420; --surface:#162034; --ink:#E6EBF4; --muted:#98A2B6; --line:#26324A;
   --navy:#1B2D52; --navy-ink:#E6EBF4; --slate:#30405C; --accent:color-mix(in srgb,var(--brand) 45%,#FFFFFF); --accent-soft:color-mix(in srgb,var(--brand) 30%,#162034); --on-accent:#0E1420;
-  --good:#5CC290; --warn:#E3A24A; --bad:#F2877D; --chip:#1E2A42; color-scheme:dark}
+  --good:#5CC290; --warn:#E3A24A; --bad:#F2877D; --chip:#1E2A42; --open:#1C2840; --giro:#8DB8F2; --giro-soft:#1C2C4A; color-scheme:dark}
 html,body{height:100%}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
@@ -79,7 +79,7 @@ main{padding-block:14px 96px}
 .inv{border-top:1px solid var(--line)}
 .inv:first-child{border-top:0}
 .inv>button{display:flex;align-items:center;gap:10px;width:100%;padding:11px 14px;border:0;background:transparent;cursor:pointer;text-align:left}
-.inv>button:hover{background:var(--accent-soft)}
+@media (hover:hover){.inv>button:hover{background:var(--accent-soft)}}
 .inv .num{font-weight:600;font-variant-numeric:tabular-nums}
 .inv .date{color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums}
 .inv .amt{margin-left:auto;font-weight:600;font-variant-numeric:tabular-nums}
@@ -123,14 +123,18 @@ nav.bottom button[aria-selected="true"]{color:var(--accent)}
 .fwrap{border-top:1px solid var(--line);scroll-margin-bottom:96px}
 .fwrap:first-child{border-top:0}
 .frow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;padding:9px 14px;font-size:13px;width:100%;border:0;background:transparent;text-align:left;cursor:pointer;font-family:inherit;color:inherit}
-.frow:hover{background:var(--accent-soft)}
+@media (hover:hover){.frow:hover{background:var(--accent-soft)}}
 .inv{scroll-margin-bottom:96px}
 .mcol{display:flex;flex-direction:column;min-width:96px}
 .yoy{font-size:11.5px;color:var(--muted);font-weight:500;font-variant-numeric:tabular-nums}
 .yoy .up{color:var(--good);font-weight:600} .yoy .down{color:var(--bad);font-weight:600}
-.pill.giro{color:var(--accent);background:var(--accent-soft)}
+.pill.giro{color:var(--giro);background:var(--giro-soft)}
+.fwrap.open,.inv[open-state="1"]{background:var(--open);box-shadow:inset 3px 0 0 var(--accent)}
+.fwrap.open .lines,.inv[open-state="1"] .lines{background:transparent}
+.fwrap.open .frow,.inv[open-state="1"]>button{background:transparent}
+.inv .ident{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;min-width:0;flex:1}
 .age{font-weight:600;color:var(--warn)} .age.old{color:var(--bad)} .age.mute{color:var(--muted);font-weight:500}
-.frow .who{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.frow .who{font-weight:600;min-width:0;overflow-wrap:anywhere}
 .frow .meta{color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
 .frow .amt2{grid-row:span 2;align-self:center}
 .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
@@ -141,7 +145,7 @@ nav.bottom button[aria-selected="true"]{color:var(--accent)}
 .sumbox .big{font-family:var(--f-display);font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
 .sumbox .lbl{font-size:12px;color:var(--brand2);font-weight:600;text-transform:uppercase;letter-spacing:.06em}
 .month>button{display:flex;align-items:center;gap:10px;width:100%;padding:11px 14px;border:0;background:transparent;cursor:pointer;text-align:left}
-.month>button:hover{background:var(--accent-soft)}
+@media (hover:hover){.month>button:hover{background:var(--accent-soft)}}
 .month{border-top:1px solid var(--line)} .month:first-child{border-top:0}
 .month .mname{font-weight:600;text-transform:capitalize;min-width:84px}
 .month .chev{transition:transform .15s} .month[open-state="1"] .chev{transform:rotate(90deg)}
@@ -378,7 +382,7 @@ async function loadArts(){
 
 /* ---------- Vistas ---------- */
 const ST = { ok: ["ok","Cobrada"], pend: ["pend","Pendiente"], par: ["par","Parcial"], sus: ["mute","Sustituida"], cero: ["mute","0 €"] };
-const pill = i => '<span class="pill ' + ST[i.st][0] + '">' + ST[i.st][1] + '</span>';
+const pill = (i, sinGiro) => (!sinGiro && i.giro && (i.st === "pend" || i.st === "par")) ? '<span class="pill giro">' + ST[i.st][1] + ' · giro</span>' : '<span class="pill ' + ST[i.st][0] + '">' + ST[i.st][1] + '</span>';
 const amt2 = (conIva, sinIva, cls) => '<div class="amt2' + (cls ? " " + cls : "") + '"><b>' + eur(conIva) + '</b><small>' + eur(sinIva) + ' sin IVA</small></div>';
 const invNum = i => (i.serie && i.serie !== "1" ? i.serie + "-" : "") + i.num;
 const DORM_DIAS = 60;
@@ -488,8 +492,8 @@ function viewClient(){
       h += '<p class="count">' + yl.length + ' facturas · ' + eur(tot) + ' (' + eur(totB) + ' sin IVA) · la última, abajo</p><div class="list">';
       h += yl.map(i => { const k = i.key; const o = S.open.has(k);
         return '<div class="inv" open-state="' + (o?1:0) + '"><button type="button" data-inv="' + esc(k) + '" aria-expanded="' + o + '">' + chev +
-          '<span class="num">' + esc(invNum(i)) + '</span><span class="date">' + fdate(i.date) + '</span>' +
-          pill(i) + amt2(i.total, i.base, i.total < 0 ? "neg" : "") + '</button>' +
+          '<span class="ident"><span class="num">' + esc(invNum(i)) + '</span><span class="date">' + fdate(i.date) + '</span>' +
+          pill(i) + '</span>' + amt2(i.total, i.base, i.total < 0 ? "neg" : "") + '</button>' +
           (o ? '<div class="lines">' + (i.lines.length ? i.lines.map(lineHtml).join("") : '<div class="empty">Sin líneas</div>') + dlBtn(i) + '</div>' : '') + '</div>'; }).join("");
       h += '</div>';
     }
@@ -551,14 +555,14 @@ function viewFacturacion(){
   const who = i => { const c = S.data.byCode.get(i.client); return esc((c && c.name) || i.name); };
   const linesOf = i => '<div class="lines">' + (i.lines.length ? i.lines.map(lineHtml).join("") : '<div class="empty">Sin líneas</div>') + dlBtn(i) + '</div>';
   const frow = i => { const o = S.fopenInv.has(i.key);
-    return '<div class="fwrap"><button type="button" class="frow" data-finv="' + esc(i.key) + '" aria-expanded="' + o + '"><span class="who">' + who(i) + '</span>' +
+    return '<div class="fwrap' + (o ? ' open' : '') + '"><button type="button" class="frow" data-finv="' + esc(i.key) + '" aria-expanded="' + o + '"><span class="who">' + who(i) + '</span>' +
       amt2(i.total, i.base, i.total < 0 ? "neg" : "").replace('<div class="amt2', '<span class="amt2').replace(/<\/div>$/, '</span>') +
       '<span class="meta">' + esc(invNum(i)) + ' · ' + fdate(i.date) + ' ' + pill(i) + '</span></button>' + (o ? linesOf(i) : '') + '</div>'; };
   const prow = i => { const o = S.fopenInv.has(i.key);
     const age = '<span class="age' + (i.giro ? " mute" : daysSince(i.date) > 60 ? " old" : "") + '">' + antig(i.date) + '</span>';
-    return '<div class="fwrap"><button type="button" class="frow" data-finv="' + esc(i.key) + '" aria-expanded="' + o + '"><span class="who">' + who(i) + '</span>' +
+    return '<div class="fwrap' + (o ? ' open' : '') + '"><button type="button" class="frow" data-finv="' + esc(i.key) + '" aria-expanded="' + o + '"><span class="who">' + who(i) + '</span>' +
       '<span class="amt2"><b>' + eur(i.pend) + '</b><small>de ' + eur(i.total) + '</small></span>' +
-      '<span class="meta">' + esc(invNum(i)) + ' · ' + fdate(i.date) + ' · ' + age + (i.giro ? ' <span class="pill giro">Giro bancario</span>' : (i.fp ? ' · ' + esc(i.fp) : '')) + (i.st === "par" ? ' ' + pill(i) : '') + '</span></button>' + (o ? linesOf(i) : '') + '</div>'; };
+      '<span class="meta">' + esc(invNum(i)) + ' · ' + fdate(i.date) + ' · ' + age + (i.giro ? ' <span class="pill giro">Giro bancario</span>' : (i.fp ? ' · ' + esc(i.fp) : '')) + (i.st === "par" ? ' ' + pill(i, true) : '') + '</span></button>' + (o ? linesOf(i) : '') + '</div>'; };
   let h = '';
   if (S.fpend){
     const pl = mine.filter(i => i.pend > 0.004).sort(asc);
@@ -719,7 +723,7 @@ function viewPreguntas(){
   view.querySelectorAll("[data-cli]").forEach(b => b.onclick = () => openClient(b.dataset.cli, S.pq === "artcli" ? "articulos" : "facturas", S.pq === "artcli" ? "uds" : null));
 }
 
-const APP_VERSION = "11/11/2026 · Inicio";
+const APP_VERSION = "11/11/2026 · Pendiente · giro";
 function viewCuenta(){
   const u = S.user || {};
   view.innerHTML = '<div class="acc"><div class="card"><h3>' + esc(u.nombre || "Tu cuenta") + '</h3><div class="count" style="margin:0">' + esc(u.email || "") + '</div></div>' +
