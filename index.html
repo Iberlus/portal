@@ -160,6 +160,22 @@ nav.bottom button[aria-selected="true"]{color:var(--accent)}
 .yoy{white-space:normal}
 .amt2 b,.amt2 small{white-space:nowrap}
 .inv .num,.inv .date{white-space:nowrap}
+.dash{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.dcard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;text-align:left;cursor:pointer;font:inherit;color:inherit;display:flex;flex-direction:column;gap:4px;min-width:0}
+.dcard:hover{border-color:var(--accent)}
+.dcard.wide{grid-column:1/-1}
+.dlbl{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;font-weight:600;color:var(--brand2)}
+.dbig{font-family:var(--f-display);font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.dsub{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.dsub .up,.dcard .up{color:var(--good);font-weight:600} .dsub .down,.dcard .down{color:var(--bad);font-weight:600}
+.dlist{display:flex;flex-direction:column}
+.drow{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:baseline;padding:8px 0;border:0;border-top:1px solid var(--line);background:transparent;font:inherit;color:inherit;text-align:left;cursor:pointer;font-size:13px}
+.drow:first-child{border-top:0}
+.drow .dn{font-weight:600;overflow-wrap:anywhere}
+.drow .dd{color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
+.drow .da{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+@media (max-width:360px){.dash{grid-template-columns:1fr}}
+@media (max-width:440px){nav.bottom button{padding:10px 2px;font-size:11.5px}}
 @media (max-width:440px){
   body{font-size:14px}
   .mname{font-size:14.5px} .mcount{font-size:11.5px}
@@ -231,7 +247,11 @@ nav.bottom button[aria-selected="true"]{color:var(--accent)}
 
 <nav class="bottom" aria-label="Secciones">
   <div class="wrap" role="tablist">
-    <button id="navClientes" type="button" role="tab" aria-selected="true" data-sec="clientes">
+    <button id="navInicio" type="button" role="tab" aria-selected="true" data-sec="inicio">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg>
+      Inicio
+    </button>
+    <button id="navClientes" type="button" role="tab" aria-selected="false" data-sec="clientes">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8"/><path d="M18 14.8c1.8.7 3 2.4 3.5 5.2"/></svg>
       Clientes
     </button>
@@ -264,7 +284,7 @@ const FOLDER = "19Zl7cPBzB0HXt1Dh0XRRr0si6hcQ30pO"; // CONTROL IBERLUS › FACTU
 const view = document.getElementById("view");
 const stamp = document.getElementById("stamp");
 
-const S = { fyear: null, fopen: new Set(), fpend: false, fopenInv: new Set(), cf: "all", asort: "fecha", scrollEnd: false, scrollMonth: null, com: "34", sec: "clientes", client: null, ctab: "facturas", year: null, open: new Set(), q: "", qa: "",
+const S = { fyear: null, fopen: new Set(), fpend: false, fopenInv: new Set(), cf: "all", asort: "fecha", scrollEnd: false, scrollMonth: null, com: "34", sec: "inicio", client: null, ctab: "facturas", year: null, open: new Set(), q: "", qa: "",
             data: null, arts: null, artsLoading: false, mcp: null, files: {} };
 try { const c = localStorage.getItem("iberlus_com"); if (c === "34" || c === "36") S.com = c; } catch(e) {}
 
@@ -699,7 +719,7 @@ function viewPreguntas(){
   view.querySelectorAll("[data-cli]").forEach(b => b.onclick = () => openClient(b.dataset.cli, S.pq === "artcli" ? "articulos" : "facturas", S.pq === "artcli" ? "uds" : null));
 }
 
-const APP_VERSION = "11/11/2026 · Preguntas al final";
+const APP_VERSION = "11/11/2026 · Inicio";
 function viewCuenta(){
   const u = S.user || {};
   view.innerHTML = '<div class="acc"><div class="card"><h3>' + esc(u.nombre || "Tu cuenta") + '</h3><div class="count" style="margin:0">' + esc(u.email || "") + '</div></div>' +
@@ -730,19 +750,55 @@ function viewCuenta(){
   };
 }
 
+function viewInicio(){
+  const mine = S.data.all.filter(i => { const c = S.data.byCode.get(i.client); return c && c.com === S.com && i.date; });
+  const now = new Date(), y = now.getFullYear(), m = now.getMonth(), d = now.getDate();
+  const sum = a => a.reduce((s,i) => s + i.total, 0);
+  const pct = (cur, prev) => { if (!prev) return '<span class="dsub">sin datos del año anterior</span>'; const p = Math.round((cur - prev) / Math.abs(prev) * 100); return '<span class="' + (p >= 0 ? "up" : "down") + '">' + (p >= 0 ? "+" : "−") + num(Math.abs(p)) + ' %</span>'; };
+  const curM = sum(mine.filter(i => i.date.getFullYear() === y && i.date.getMonth() === m));
+  const prevM = sum(mine.filter(i => i.date.getFullYear() === y - 1 && i.date.getMonth() === m && i.date.getDate() <= d));
+  const curY = sum(mine.filter(i => i.date.getFullYear() === y));
+  const lim = new Date(y - 1, m, d, 23, 59);
+  const prevY = sum(mine.filter(i => i.date.getFullYear() === y - 1 && i.date <= lim));
+  const pl = mine.filter(i => i.pend > 0.004), pT = pl.reduce((s,i) => s + i.pend, 0), pG = pl.filter(i => i.giro).reduce((s,i) => s + i.pend, 0);
+  const viejas = pl.filter(i => daysSince(i.date) > 60).length;
+  const dorm = myClients().filter(c => c.last && daysSince(c.last) > DORM_DIAS).length;
+  const last = mine.slice().sort((a,b) => b.date - a.date || b.num.localeCompare(a.num, "es", {numeric:true})).slice(0, 5);
+  const mes = MESES[m];
+  let h = '<div class="dash">';
+  h += '<button class="dcard" type="button" data-go="mes"><div class="dlbl">Este mes · ' + mes + '</div><div class="dbig">' + eur(curM) + '</div><div class="dsub">' + mes + ' ' + (y - 1) + ' (hasta el día ' + d + '): ' + eur(prevM) + ' · ' + pct(curM, prevM) + '</div></button>';
+  h += '<button class="dcard" type="button" data-go="anio"><div class="dlbl">Este año · ' + y + '</div><div class="dbig">' + eur(curY) + '</div><div class="dsub">' + (y - 1) + ' hasta el ' + d + '/' + (m + 1) + ': ' + eur(prevY) + ' · ' + pct(curY, prevY) + '</div></button>';
+  h += '<button class="dcard wide pendc" type="button" data-go="pend"><div class="dlbl" style="color:var(--bad)">Pendiente de cobro</div><div class="dbig" style="color:var(--bad)">' + eur(pT) + '</div><div class="dsub">A reclamar: <b>' + eur(pT - pG) + '</b> · En giro: ' + eur(pG) + '</div><div class="dsub">' + pl.length + (pl.length === 1 ? ' factura' : ' facturas') + (viejas ? ' · <b style="color:var(--bad)">' + viejas + ' de más de 2 meses</b>' : '') + '</div></button>';
+  h += '<button class="dcard wide" type="button" data-go="dorm"><div class="dlbl">Clientes sin comprar</div><div class="dbig">' + dorm + '</div><div class="dsub">llevan más de ' + DORM_DIAS + ' días sin factura · ver la lista ›</div></button>';
+  h += '<div class="dcard wide" style="cursor:default"><div class="dlbl">Últimas facturas</div><div class="dlist">' + (last.length ? last.map(i => { const c = S.data.byCode.get(i.client);
+      return '<button class="drow" type="button" data-cli="' + esc(i.client) + '"><span class="dn">' + esc((c && c.name) || i.name) + '</span><span class="dd">' + fdate(i.date) + '</span><span class="da">' + eur(i.total) + '</span></button>'; }).join("") : '<div class="dsub">Sin facturas.</div>') + '</div></div>';
+  h += '</div>';
+  view.innerHTML = h;
+  view.querySelectorAll("[data-go]").forEach(b => b.onclick = () => {
+    const g = b.dataset.go;
+    if (g === "mes"){ S.sec = "facturacion"; S.fpend = false; S.fyear = y; const k = y + "-" + m; S.fopen = new Set([k]); S.scrollMonth = k; }
+    else if (g === "anio"){ S.sec = "facturacion"; S.fpend = false; S.fyear = y; }
+    else if (g === "pend"){ S.sec = "facturacion"; S.fpend = true; }
+    else if (g === "dorm"){ S.sec = "clientes"; S.client = null; S.cf = "dorm"; }
+    render(); if (g !== "mes") window.scrollTo(0,0);
+  });
+  view.querySelectorAll("[data-cli]").forEach(b => b.onclick = () => { S.sec = "clientes"; S.client = b.dataset.cli; S.ctab = "facturas"; S.year = null; S.open = new Set(); S.scrollEnd = true; render(); });
+}
+
 function render(){
   if (S.sec === "cuenta") return viewCuenta();
   document.querySelectorAll(".seg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.com === S.com));
   document.querySelectorAll("nav.bottom button").forEach(b => b.setAttribute("aria-selected", b.dataset.sec === S.sec));
   if (S.sec === "almacen") return viewAlmacen();
   if (!S.data) return;
+  if (S.sec === "inicio") return viewInicio();
   if (S.sec === "preguntas") return viewPreguntas();
   if (S.sec === "facturacion") return viewFacturacion();
   S.client ? viewClient() : viewClients();
 }
 
 document.querySelectorAll(".seg button").forEach(b => b.onclick = () => { if (!S.user || !S.user.admin || S.com === b.dataset.com) return; S.com = b.dataset.com; S.client = null; S.q = ""; S.fopen = new Set(); S.fopenInv = new Set(); try{ localStorage.setItem("iberlus_com", S.com); }catch(e){} render(); loadAll(); });
-document.getElementById("userBtn").onclick = () => { S.sec = S.sec === "cuenta" ? "clientes" : "cuenta"; render(); window.scrollTo(0,0); };
+document.getElementById("userBtn").onclick = () => { S.sec = S.sec === "cuenta" ? "inicio" : "cuenta"; render(); window.scrollTo(0,0); };
 view.addEventListener("click", e => { const b = e.target.closest("[data-dl]"); if (b) downloadInv(b.dataset.dl, b); });
 document.querySelectorAll("nav.bottom button").forEach(b => b.onclick = () => { S.sec = b.dataset.sec; render(); window.scrollTo(0,0); });
 
@@ -765,7 +821,7 @@ document.getElementById("lgForgot").onclick = async () => {
   catch(e){ lgMsg.className = "msg err"; lgMsg.textContent = "No se pudo enviar el correo (" + (e.code || "error") + ")."; }
 };
 auth.onAuthStateChanged(async u => {
-  S.data = null; S.arts = null; S.artsErr = null; S.user = null; S.client = null; S.sec = "clientes";
+  S.data = null; S.arts = null; S.artsErr = null; S.user = null; S.client = null; S.sec = "inicio";
   if (!u){ appEl.hidden = true; loginEl.hidden = false; return; }
   loginEl.hidden = true; appEl.hidden = false;
   view.innerHTML = '<div class="note"><b>Comprobando tu acceso…</b></div>';
