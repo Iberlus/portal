@@ -178,6 +178,10 @@ nav.bottom button[aria-selected="true"]{color:var(--accent)}
 .drow .dn{font-weight:600;overflow-wrap:anywhere}
 .drow .dd{color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
 .drow .da{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.drow.debrow{grid-template-columns:minmax(0,1fr) auto;align-items:center}
+.drow .dm{display:block;font-weight:400;font-size:11.5px;color:var(--muted);margin-top:2px}
+.amt2.bad b{color:var(--bad)}
+@media (max-width:640px){.dcard.lcard{grid-column:1/-1}}
 @media (max-width:360px){.dash{grid-template-columns:1fr}}
 @media (max-width:440px){nav.bottom button{padding:10px 2px;font-size:11.5px}}
 @media (max-width:440px){
@@ -723,7 +727,7 @@ function viewPreguntas(){
   view.querySelectorAll("[data-cli]").forEach(b => b.onclick = () => openClient(b.dataset.cli, S.pq === "artcli" ? "articulos" : "facturas", S.pq === "artcli" ? "uds" : null));
 }
 
-const APP_VERSION = "11/11/2026 · Líneas en blanco";
+const APP_VERSION = "12/11/2026 · Clientes que más deben";
 function viewCuenta(){
   const u = S.user || {};
   view.innerHTML = '<div class="acc"><div class="card"><h3>' + esc(u.nombre || "Tu cuenta") + '</h3><div class="count" style="margin:0">' + esc(u.email || "") + '</div></div>' +
@@ -774,8 +778,19 @@ function viewInicio(){
   h += '<button class="dcard" type="button" data-go="anio"><div class="dlbl">Este año · ' + y + '</div><div class="dbig">' + eur(curY) + '</div><div class="dsub">' + (y - 1) + ' hasta el ' + d + '/' + (m + 1) + ': ' + eur(prevY) + ' · ' + pct(curY, prevY) + '</div></button>';
   h += '<button class="dcard wide pendc" type="button" data-go="pend"><div class="dlbl" style="color:var(--bad)">Pendiente de cobro</div><div class="dbig" style="color:var(--bad)">' + eur(pT) + '</div><div class="dsub">A reclamar: <b>' + eur(pT - pG) + '</b> · En giro: ' + eur(pG) + '</div><div class="dsub">' + pl.length + (pl.length === 1 ? ' factura' : ' facturas') + (viejas ? ' · <b style="color:var(--bad)">' + viejas + ' de más de 2 meses</b>' : '') + '</div></button>';
   h += '<button class="dcard wide" type="button" data-go="dorm"><div class="dlbl">Clientes sin comprar</div><div class="dbig">' + dorm + '</div><div class="dsub">llevan más de ' + DORM_DIAS + ' días sin factura · ver la lista ›</div></button>';
-  h += '<div class="dcard wide" style="cursor:default"><div class="dlbl">Últimas facturas</div><div class="dlist">' + (last.length ? last.map(i => { const c = S.data.byCode.get(i.client);
+  h += '<div class="dcard lcard" style="cursor:default"><div class="dlbl">Últimas facturas</div><div class="dlist">' + (last.length ? last.map(i => { const c = S.data.byCode.get(i.client);
       return '<button class="drow" type="button" data-cli="' + esc(i.client) + '"><span class="dn">' + esc((c && c.name) || i.name) + '</span><span class="dd">' + fdate(i.date) + '</span><span class="da">' + eur(i.total) + '</span></button>'; }).join("") : '<div class="dsub">Sin facturas.</div>') + '</div></div>';
+  // Clientes que más deben: solo lo que hay que reclamar (sin giro bancario), de mayor a menor
+  const deb = new Map();
+  for (const i of pl){ if (i.giro) continue;
+    const e = deb.get(i.client) || { code: i.client, name: i.name, t: 0, b: 0, n: 0, old: i.date };
+    e.t += i.pend; e.b += i.total ? i.pend * i.base / i.total : 0; e.n++; if (i.date < e.old) e.old = i.date;
+    deb.set(i.client, e); }
+  const top = [...deb.values()].filter(e => e.t > 0.004).sort((a,b) => b.t - a.t).slice(0, 6);
+  h += '<div class="dcard lcard" style="cursor:default"><div class="dlbl" style="color:var(--bad)">Clientes que más deben · a reclamar</div><div class="dlist">' + (top.length ? top.map(e => { const c = S.data.byCode.get(e.code);
+      return '<button class="drow debrow" type="button" data-deb="' + esc(e.code) + '" data-y="' + e.old.getFullYear() + '"><span class="dn">' + esc((c && c.name) || e.name) +
+        '<small class="dm">' + e.n + (e.n === 1 ? ' factura' : ' facturas') + ' · la más antigua, hace ' + antig(e.old) + '</small></span>' +
+        amt2(e.t, e.b, "bad") + '</button>'; }).join("") : '<div class="dsub">No hay nada pendiente de reclamar.</div>') + '</div></div>';
   h += '</div>';
   view.innerHTML = h;
   view.querySelectorAll("[data-go]").forEach(b => b.onclick = () => {
@@ -787,6 +802,7 @@ function viewInicio(){
     render(); if (g !== "mes") window.scrollTo(0,0);
   });
   view.querySelectorAll("[data-cli]").forEach(b => b.onclick = () => { S.sec = "clientes"; S.client = b.dataset.cli; S.ctab = "facturas"; S.year = null; S.open = new Set(); S.scrollEnd = true; render(); });
+  view.querySelectorAll("[data-deb]").forEach(b => b.onclick = () => { S.sec = "clientes"; S.client = b.dataset.deb; S.ctab = "facturas"; S.year = +b.dataset.y; S.open = new Set(); S.scrollEnd = true; render(); });
 }
 
 function render(){
