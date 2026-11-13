@@ -283,7 +283,7 @@ nav.bottom button[aria-selected="true"]{color:var(--accent)}
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="factura.js?v=2026-11-14"></script>
+<script src="factura.js?v=2026-11-14b"></script>
 <script>
 (function(){
 "use strict";
@@ -836,7 +836,7 @@ function viewPreguntas(){
   view.querySelectorAll("[data-cli]").forEach(b => b.onclick = () => openClient(b.dataset.cli, S.pq === "artcli" ? "articulos" : "facturas", S.pq === "artcli" ? "uds" : null));
 }
 
-const APP_VERSION = "14/11/2026 · IVA de cada factura";
+const APP_VERSION = "14/11/2026 · Líneas de texto sin ceros";
 function viewCuenta(){
   const u = S.user || {};
   view.innerHTML = '<div class="acc"><div class="card"><h3>' + esc(u.nombre || "Tu cuenta") + '</h3><div class="count" style="margin:0">' + esc(u.email || "") + '</div></div>' +

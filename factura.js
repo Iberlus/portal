@@ -85,6 +85,9 @@
         const y = LINE_Y0 + k * LINE_PITCH, o = { size: SL };
         if (l.cont) { t(l.descripcion, 93.6, y, o); return; }
         t(l.codigo, 19.8, y, o); t(l.descripcion, 93.6, y, o);
+        // Líneas de texto (cantidad 0, p. ej. asteriscos o condiciones de pago): solo la descripción.
+        // Un regalo sin cargo lleva cantidad, así que sí sale con precio e importe 0.
+        if (!+l.cantidad) return;
         t(qty(l.cantidad), 345.7, y, { ...o, align: "right" });
         t(eur(l.precio, 3), 399.6, y, { ...o, align: "right" });
         if (+l.descuento) { t(eur(l.descuento, 2), 437.2, y, { ...o, align: "right" }); t("%", 441.3, y, o); }
