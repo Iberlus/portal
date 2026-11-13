@@ -302,6 +302,8 @@ const eur = n => { const v = Number(n) || 0, p = Math.abs(v).toFixed(2).split(".
 const num = n => { const v = Math.round((Number(n) || 0) * 100) / 100, p = String(Math.abs(v)).split("."); return (v < 0 ? "-" : "") + grp(p[0]) + (p[1] ? "," + p[1] : ""); };
 const fdate = d => d ? d.toLocaleDateString("es-ES",{day:"2-digit",month:"2-digit",year:"numeric"}) : "—";
 const norm = s => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().trim();
+// Nombre fiscal solo si es distinto del comercial (se muestra debajo, en pequeño)
+const fisc = c => (c && c.fiscal && norm(c.fiscal) !== norm(c.name)) ? c.fiscal : "";
 const keyNorm = k => norm(k).replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"");
 const chev = '<svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>';
 
@@ -566,7 +568,7 @@ function viewClients(){
   h += '<p class="count">' + (dorm ? list.length + ' clientes llevan más de ' + DORM_DIAS + ' días sin comprar · el que más tiempo lleva, primero' : list.length + ' de ' + all.length + ' clientes · ordenados por última compra') + '</p>';
   if (!list.length) h += '<div class="list"><div class="empty">' + (dorm ? "Ningún cliente lleva más de " + DORM_DIAS + " días sin comprar." : all.length ? "Ningún cliente coincide con la búsqueda." : "Este comercial no tiene clientes asignados en Factusol.") + '</div></div>';
   else h += '<div class="list">' + list.slice(0, 300).map(c =>
-    '<button class="row" type="button" data-client="' + esc(c.code) + '"><div class="main"><div class="name">' + esc(c.name) + '</div><div class="sub">' + esc([c.code, c.pob].filter(Boolean).join(" · ")) + '</div></div>' +
+    '<button class="row" type="button" data-client="' + esc(c.code) + '"><div class="main"><div class="name">' + esc(c.name) + '</div><div class="sub" style="white-space:normal">' + esc([fisc(c), c.code, c.pob].filter(Boolean).join(" · ")) + '</div></div>' +
     '<div class="right">' + (!c.nInv ? "sin facturas" : dorm ? '<span class="age old">hace ' + antig(c.last) + '</span><br>' + fdate(c.last) : c.nInv + " fras.<br>" + fdate(c.last)) + '</div>' + chev + '</button>').join("") + '</div>';
   view.innerHTML = h;
   const inp = document.getElementById("qc");
@@ -760,7 +762,7 @@ function viewPreguntas(){
     const q = norm(S.pqQ || "");
     const list = S.data.clients.filter(c => c.nInv && (!q || norm(c.name + " " + c.fiscal + " " + c.code + " " + c.pob).includes(q))).sort((a,b) => a.name.localeCompare(b.name, "es")).slice(0, 60);
     h += '<div class="search"><input id="pqq" type="search" placeholder="Busca el cliente" value="' + esc(S.pqQ || "") + '" autocomplete="off" aria-label="Buscar cliente"></div>';
-    h += '<div class="list">' + (list.length ? list.map(c => pqRow(esc(c.name), esc([c.code, c.pob].filter(Boolean).join(" · ")), "", 'data-cli="' + esc(c.code) + '"')).join("") : '<div class="empty">Ningún cliente coincide.</div>') + '</div>';
+    h += '<div class="list">' + (list.length ? list.map(c => pqRow(esc(c.name), esc([fisc(c), c.code, c.pob].filter(Boolean).join(" · ")), "", 'data-cli="' + esc(c.code) + '"')).join("") : '<div class="empty">Ningún cliente coincide.</div>') + '</div>';
   }
   else if (id === "topcli" || id === "freq"){
     h += pqChips(years.map(y => [y, String(y)]), S.pqYear, "data-py");
@@ -834,7 +836,7 @@ function viewPreguntas(){
   view.querySelectorAll("[data-cli]").forEach(b => b.onclick = () => openClient(b.dataset.cli, S.pq === "artcli" ? "articulos" : "facturas", S.pq === "artcli" ? "uds" : null));
 }
 
-const APP_VERSION = "13/11/2026 · Listado PDF de pendientes";
+const APP_VERSION = "13/11/2026 · Nombre fiscal en las listas";
 function viewCuenta(){
   const u = S.user || {};
   view.innerHTML = '<div class="acc"><div class="card"><h3>' + esc(u.nombre || "Tu cuenta") + '</h3><div class="count" style="margin:0">' + esc(u.email || "") + '</div></div>' +
@@ -886,7 +888,7 @@ function viewInicio(){
   h += '<button class="dcard wide pendc" type="button" data-go="pend"><div class="dlbl" style="color:var(--bad)">Pendiente de cobro</div><div class="dbig" style="color:var(--bad)">' + eur(pT) + '</div><div class="dsub">A reclamar: <b>' + eur(pT - pG) + '</b> · En giro: ' + eur(pG) + '</div><div class="dsub">' + pl.length + (pl.length === 1 ? ' factura' : ' facturas') + (viejas ? ' · <b style="color:var(--bad)">' + viejas + ' de más de 2 meses</b>' : '') + '</div></button>';
   h += '<button class="dcard wide" type="button" data-go="dorm"><div class="dlbl">Clientes sin comprar</div><div class="dbig">' + dorm + '</div><div class="dsub">llevan más de ' + DORM_DIAS + ' días sin factura · ver la lista ›</div></button>';
   h += '<div class="dcard lcard" style="cursor:default"><div class="dlbl">Últimas facturas</div><div class="dlist">' + (last.length ? last.map(i => { const c = S.data.byCode.get(i.client);
-      return '<button class="drow" type="button" data-cli="' + esc(i.client) + '"><span class="dn">' + esc((c && c.name) || i.name) + '</span><span class="dd">' + fdate(i.date) + '</span><span class="da">' + eur(i.total) + '</span></button>'; }).join("") : '<div class="dsub">Sin facturas.</div>') + '</div></div>';
+      return '<button class="drow" type="button" data-cli="' + esc(i.client) + '"><span class="dn">' + esc((c && c.name) || i.name) + (fisc(c) ? '<small class="dm">' + esc(fisc(c)) + '</small>' : '') + '</span><span class="dd">' + fdate(i.date) + '</span><span class="da">' + eur(i.total) + '</span></button>'; }).join("") : '<div class="dsub">Sin facturas.</div>') + '</div></div>';
   // Clientes que más deben: solo lo que hay que reclamar (sin giro bancario), de mayor a menor
   const deb = new Map();
   for (const i of pl){ if (i.giro) continue;
@@ -896,6 +898,7 @@ function viewInicio(){
   const top = [...deb.values()].filter(e => e.t > 0.004).sort((a,b) => b.t - a.t).slice(0, 6);
   h += '<div class="dcard lcard" style="cursor:default"><div class="dlbl" style="color:var(--bad)">Clientes que más deben · a reclamar</div><div class="dlist">' + (top.length ? top.map(e => { const c = S.data.byCode.get(e.code);
       return '<button class="drow debrow" type="button" data-deb="' + esc(e.code) + '" data-y="' + e.old.getFullYear() + '"><span class="dn">' + esc((c && c.name) || e.name) +
+        (fisc(c) ? '<small class="dm">' + esc(fisc(c)) + '</small>' : '') +
         '<small class="dm">' + e.n + (e.n === 1 ? ' factura' : ' facturas') + ' · la más antigua, hace ' + antig(e.old) + '</small></span>' +
         amt2(e.t, e.b, "bad") + '</button>'; }).join("") : '<div class="dsub">No hay nada pendiente de reclamar.</div>') + '</div></div>';
   h += '</div>';
