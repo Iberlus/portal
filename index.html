@@ -437,7 +437,7 @@ async function downloadInv(key, btn){
     const f = { serie: i.serie, numero: i.num, fecha: fdate(i.date), prueba: true, modelo2025: !!(i.date && i.date.getFullYear() < 2026),
       cliente: { codigo: i.client, fiscal: c.fiscal || i.name, linea2: c.comName || "", domicilio: "", cp: c.cp || "", poblacion: c.pob || "", provincia: c.prov || "", nif: c.nif || "" },
       lineas: i.lines.map(l => ({ codigo: l.code, descripcion: l.desc, cantidad: l.qty, precio: l.price, descuento: l.dto, importe: l.imp })),
-      importe: base, dtoPP: i.pp && base ? i.pp / base * 100 : 0, portes: i.portes, base: i.base, iva: i.iva, re: i.re, total: i.total, formaPago: i.fp,
+      importe: base, dtoPP: i.pp && base ? i.pp / base * 100 : 0, portes: i.portes, base: i.base, iva: i.iva, ivaPct: i.base ? Math.round(Math.abs(i.iva / i.base) * 100) : 21, re: i.re, total: i.total, formaPago: i.fp,
       vencimientos: [{ fecha: /CONTADO/.test(fp) || !i.venc ? null : fdate(i.venc), importe: i.total }] };
     const doc = window.facturaIberlus(window.jspdf.jsPDF, f, window.FACTURA_RES);
     const name = (f.cliente.fiscal || "Factura").replace(/,/g, "").replace(/\s+/g, "_").replace(/[^A-Za-z0-9_.\-]/g, "_") + "_Factura_" + f.serie + "-" + f.numero + ".pdf";
@@ -836,7 +836,7 @@ function viewPreguntas(){
   view.querySelectorAll("[data-cli]").forEach(b => b.onclick = () => openClient(b.dataset.cli, S.pq === "artcli" ? "articulos" : "facturas", S.pq === "artcli" ? "uds" : null));
 }
 
-const APP_VERSION = "14/11/2026 · Descripciones largas en la factura";
+const APP_VERSION = "14/11/2026 · IVA de cada factura";
 function viewCuenta(){
   const u = S.user || {};
   view.innerHTML = '<div class="acc"><div class="card"><h3>' + esc(u.nombre || "Tu cuenta") + '</h3><div class="count" style="margin:0">' + esc(u.email || "") + '</div></div>' +
