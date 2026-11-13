@@ -354,6 +354,7 @@ async function loadMeta(){
   try {
     const m = await db.doc("meta/estado").get();
     const d = m.exists && m.data().datos ? new Date(m.data().datos) : null;
+    S.dataDate = d;
     stamp.textContent = d ? "Datos del " + d.toLocaleDateString("es-ES",{day:"2-digit",month:"2-digit"}) + " · " + d.toLocaleTimeString("es-ES",{hour:"2-digit",minute:"2-digit"}) : "Sin fecha de datos";
   } catch(e){ stamp.textContent = ""; }
 }
@@ -443,6 +444,111 @@ async function downloadInv(key, btn){
     setTimeout(() => URL.revokeObjectURL(url), 10000);
     done("Descargada");
   } catch(e){ done("No se pudo descargar"); }
+}
+// Listado de pendientes a reclamar (sin giro) en PDF, agrupado por cliente (el que más debe, primero)
+function listadoPendientes(btn){
+  if (!S.data || btn.disabled) return;
+  const old = btn.textContent; btn.disabled = true; btn.textContent = "Generando…";
+  const done = msg => { btn.textContent = msg; setTimeout(() => { btn.textContent = old; btn.disabled = false; }, 2500); };
+  try {
+    const R = window.FACTURA_RES;
+    if (!window.jspdf || !R) return done("No disponible");
+    const pl = S.data.all.filter(i => { const c = S.data.byCode.get(i.client); return c && c.com === S.com && i.date && i.pend > 0.004 && !i.giro; });
+    if (!pl.length) return done("Nada a reclamar");
+    const sinIva = i => i.total ? i.pend * i.base / i.total : 0;
+    const groups = new Map();
+    for (const i of pl){ const g = groups.get(i.client) || { code: i.client, name: ((S.data.byCode.get(i.client) || {}).name) || i.name, inv: [], t: 0, b: 0 };
+      g.inv.push(i); g.t += i.pend; g.b += sinIva(i); groups.set(i.client, g); }
+    const gl = [...groups.values()].sort((a,b) => b.t - a.t);
+    gl.forEach(g => g.inv.sort((a,b) => a.date - b.date || a.num.localeCompare(b.num, "es", {numeric:true})));
+    const totT = gl.reduce((s,g) => s + g.t, 0), totB = gl.reduce((s,g) => s + g.b, 0);
+    const money = n => { const v = Number(n) || 0, p = Math.abs(v).toFixed(2).split("."); return (v < 0 ? "-" : "") + grp(p[0]) + "," + p[1] + " €"; };
+    const comBtn = document.querySelector('[data-com="' + S.com + '"]');
+    const comLabel = (S.user && !S.user.admin && S.user.nombre) ? S.user.nombre : (comBtn ? comBtn.textContent.trim() : "Comercial " + S.com);
+
+    const doc = new window.jspdf.jsPDF({ unit: "pt", format: "a4", compress: true });
+    doc.addFileToVFS("Carlito.ttf", R.carlito); doc.addFont("Carlito.ttf", "Calibri", "normal");
+    doc.addFileToVFS("CarlitoB.ttf", R.carlitoBold); doc.addFont("CarlitoB.ttf", "Calibri", "bold");
+    doc.setProperties({ title: "Pendientes de cobro - " + comLabel, author: "Iberlus Distribución Doméstica, S.L." });
+    const PINK = [228, 6, 138], BLUE = [0, 191, 255], RED = [192, 0, 0], GREY = [90, 90, 90], BLACK = [0, 0, 0], LIGHT = [242, 242, 242];
+    const W = 595.28, H = 841.89, L = 36, Rm = W - 36;
+    const font = (sz, bold, col) => { doc.setFont("Calibri", bold ? "bold" : "normal"); doc.setFontSize(sz); doc.setTextColor(...(col || BLACK)); };
+    const fit = (txt, w) => { txt = String(txt || ""); if (doc.getTextWidth(txt) <= w) return txt; while (txt.length > 1 && doc.getTextWidth(txt + "…") > w) txt = txt.slice(0, -1); return txt + "…"; };
+    // columnas: factura, fecha, días, forma de pago, pendiente con IVA, sin IVA
+    const C = { fac: L + 14, fec: L + 92, dias: L + 175, fp: L + 225, con: Rm - 92, sin: Rm - 6 };
+    const now = new Date();
+    const head = first => {
+      let y = 34;
+      if (first){
+        if (R.logo) doc.addImage(R.logo, R.logoFmt || "JPEG", L, y - 6, 84, 60);
+        font(18, true, PINK); doc.text("Pendientes de cobro", Rm, y + 12, { align: "right" });
+        font(10.5, false, GREY); doc.text("A reclamar (sin giro bancario) · " + comLabel, Rm, y + 28, { align: "right" });
+        doc.text((S.dataDate ? "Datos del " + fdate(S.dataDate) + " · " : "") + "Generado el " + fdate(now) + " " + now.toLocaleTimeString("es-ES", {hour:"2-digit", minute:"2-digit"}), Rm, y + 42, { align: "right" });
+        y += 72;
+        doc.setFillColor(...LIGHT); doc.roundedRect(L, y, Rm - L, 46, 4, 4, "F");
+        font(9.5, false, GREY); doc.text("TOTAL A RECLAMAR (con IVA)", L + 12, y + 16);
+        font(17, true, RED); doc.text(money(totT), L + 12, y + 36);
+        font(9.5, false, GREY); doc.text("Sin IVA", L + 220, y + 16); font(13, true, BLACK); doc.text(money(totB), L + 220, y + 35);
+        font(9.5, false, GREY); doc.text("Facturas · clientes", Rm - 12, y + 16, { align: "right" });
+        font(13, true, BLACK); doc.text(pl.length + " · " + gl.length, Rm - 12, y + 35, { align: "right" });
+        y += 62;
+      } else {
+        font(9.5, true, PINK); doc.text("Pendientes de cobro · " + comLabel, L, y + 4);
+        font(9, false, GREY); doc.text("(continuación)", Rm, y + 4, { align: "right" });
+        y += 16;
+      }
+      doc.setFillColor(...BLUE); doc.rect(L, y, Rm - L, 18, "F");
+      font(9.5, true, [255,255,255]);
+      doc.text("Factura", C.fac, y + 12.5); doc.text("Fecha", C.fec, y + 12.5); doc.text("Días", C.dias, y + 12.5); doc.text("Forma de pago", C.fp, y + 12.5);
+      doc.text("Pendiente con IVA", C.con, y + 12.5, { align: "right" }); doc.text("Sin IVA", C.sin, y + 12.5, { align: "right" });
+      return y + 18;
+    };
+    let y = head(true);
+    const BOTTOM = H - 46, ROW = 15;
+    const newPage = () => { doc.addPage(); y = head(false); };
+    for (const g of gl){
+      font(10.5, true, BLACK);
+      const tTxt = money(g.t);
+      const nameW = (C.con - doc.getTextWidth(tTxt) - 14) - (L + 8);
+      const nl = doc.splitTextToSize(g.name + "  (" + g.code + ")", nameW).slice(0, 2);
+      const gh = 18 + (nl.length - 1) * 12;
+      if (y + 6 + gh + ROW > BOTTOM) newPage();
+      y += 6;
+      doc.setFillColor(253, 232, 244); doc.rect(L, y, Rm - L, gh, "F");
+      doc.setDrawColor(...PINK); doc.setLineWidth(2); doc.line(L, y, L, y + gh); doc.setLineWidth(0.5);
+      font(10.5, true, BLACK); nl.forEach((t, k) => doc.text(t, L + 8, y + 12.5 + k * 12));
+      font(10.5, true, RED); doc.text(tTxt, C.con, y + 12.5, { align: "right" });
+      font(9.5, false, GREY); doc.text(money(g.b), C.sin, y + 12.5, { align: "right" });
+      y += gh;
+      for (const i of g.inv){
+        if (y + ROW > BOTTOM){ newPage(); font(9.5, true, GREY); doc.text(fit(g.name + " (sigue)", Rm - L - 16), L + 8, y + 11); y += ROW; }
+        const d = daysSince(i.date);
+        font(9.5, false, BLACK);
+        doc.text(invNum(i), C.fac, y + 11); doc.text(fdate(i.date), C.fec, y + 11);
+        font(9.5, d > 60, d > 60 ? RED : BLACK); doc.text(String(d), C.dias + 18, y + 11, { align: "right" });
+        font(9.5, false, BLACK); doc.text(fit((i.fp || "") + (i.st === "par" ? " · parcial" : ""), C.con - 70 - C.fp), C.fp, y + 11);
+        doc.text(money(i.pend), C.con, y + 11, { align: "right" });
+        font(9.5, false, GREY); doc.text(money(sinIva(i)), C.sin, y + 11, { align: "right" });
+        doc.setDrawColor(225); doc.line(L + 8, y + ROW, Rm, y + ROW);
+        y += ROW;
+      }
+    }
+    if (y + 26 > BOTTOM) newPage();
+    y += 8; doc.setDrawColor(...PINK); doc.setLineWidth(1); doc.line(L, y, Rm, y); doc.setLineWidth(0.5);
+    font(11, true, BLACK); doc.text("TOTAL A RECLAMAR", L + 8, y + 16);
+    font(11, true, RED); doc.text(money(totT), C.con, y + 16, { align: "right" });
+    font(10, true, GREY); doc.text(money(totB), C.sin, y + 16, { align: "right" });
+    const pages = doc.getNumberOfPages();
+    for (let p = 1; p <= pages; p++){ doc.setPage(p); font(8.5, false, GREY);
+      doc.text("Iberlus Distribución Doméstica, S.L. · Días = días desde la fecha de la factura (en rojo, más de 60)", L, H - 24);
+      doc.text("Página " + p + " de " + pages, Rm, H - 24, { align: "right" }); }
+    const d0 = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0") + "-" + String(now.getDate()).padStart(2, "0");
+    const name = ("Pendientes_cobro_" + comLabel.replace(/\(.*?\)/g, "") + "_" + d0).replace(/\s+/g, "_").replace(/[^A-Za-z0-9_.\-]/g, "").replace(/_+/g, "_") + ".pdf";
+    const url = URL.createObjectURL(doc.output("blob")), a = document.createElement("a");
+    a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+    done("Descargado");
+  } catch(e){ done("No se pudo generar"); }
 }
 const MESES = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
 
@@ -571,7 +677,7 @@ function viewFacturacion(){
   if (S.fpend){
     const pl = mine.filter(i => i.pend > 0.004).sort(asc);
     const tot = pl.reduce((s,i) => s + i.pend, 0), gir = pl.filter(i => i.giro).reduce((s,i) => s + i.pend, 0);
-    h += '<div class="toolbar"><span class="sp"></span><button class="pendbtn" id="fp" type="button" aria-pressed="true">Pendientes de cobro</button></div>';
+    h += '<div class="toolbar"><button class="btn dl" id="lpdf" type="button">Listado (PDF)</button><span class="sp"></span><button class="pendbtn" id="fp" type="button" aria-pressed="true">Pendientes de cobro</button></div>';
     h += '<div class="sumbox"><div><div class="lbl">Pendiente de cobro (con IVA)</div><div class="big">' + eur(tot) + '</div></div><div class="count" style="margin:0;text-align:right">A reclamar: <b style="color:var(--bad)">' + eur(tot - gir) + '</b><br>En giro bancario: ' + eur(gir) + '<br>' + pl.length + ' facturas · la última, abajo</div></div>';
     h += '<div class="list">' + (pl.length ? pl.map(prow).join("") : '<div class="empty">No hay facturas pendientes de cobro.</div>') + '</div>';
   } else {
@@ -607,6 +713,7 @@ function viewFacturacion(){
   }
   view.innerHTML = h;
   document.getElementById("fp").onclick = () => { S.fpend = !S.fpend; render(); };
+  const lp = document.getElementById("lpdf"); if (lp) lp.onclick = () => listadoPendientes(lp);
   const fp2 = document.getElementById("fp2"); if (fp2) fp2.onclick = () => { S.fpend = true; render(); window.scrollTo(0,0); };
   view.querySelectorAll("[data-fy]").forEach(b => b.onclick = () => { S.fyear = +b.dataset.fy; S.fopen = new Set(); render(); });
   view.querySelectorAll("[data-fm]").forEach(b => b.onclick = () => { const k = b.dataset.fm; if (S.fopen.has(k)) S.fopen.delete(k); else { S.fopen.add(k); S.scrollMonth = k; } render(); });
@@ -727,7 +834,7 @@ function viewPreguntas(){
   view.querySelectorAll("[data-cli]").forEach(b => b.onclick = () => openClient(b.dataset.cli, S.pq === "artcli" ? "articulos" : "facturas", S.pq === "artcli" ? "uds" : null));
 }
 
-const APP_VERSION = "12/11/2026 · Clientes que más deben";
+const APP_VERSION = "13/11/2026 · Listado PDF de pendientes";
 function viewCuenta(){
   const u = S.user || {};
   view.innerHTML = '<div class="acc"><div class="card"><h3>' + esc(u.nombre || "Tu cuenta") + '</h3><div class="count" style="margin:0">' + esc(u.email || "") + '</div></div>' +
