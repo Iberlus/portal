@@ -6,6 +6,7 @@
   const LABEL = [0, 191, 255], DEEP = [0, 0, 255], BLACK = [0, 0, 0];
   const S = 9.7, SL = 9.0, ASC = 0.75;             // tamaños de texto y ascendente de Calibri
   const LINE_Y0 = 270.5, LINE_PITCH = 12.12, LINE_LAST = 640;  // tabla de líneas
+  const DESC_W = 205;                               // ancho de la columna DESCRIPCIÓN (pt)
   const eur = (n, d = 2) => (Number(n) || 0).toLocaleString("es-ES", { minimumFractionDigits: d, maximumFractionDigits: d, useGrouping: "always" });
   const qty = n => Number.isInteger(+n) ? String(+n) : eur(n, 2);
   const pct = n => (Number(n) || 0).toLocaleString("es-ES", { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + "%";
@@ -28,11 +29,24 @@
     };
     const lbl = (txt, x, y) => t(txt, x, y, { bold: true, color: LABEL });
 
-    const pages = [];
-    for (let i = 0; i < Math.max(1, f.lineas.length); ) {
-      const n = Math.floor((LINE_LAST - LINE_Y0) / LINE_PITCH) + 1;
-      pages.push(f.lineas.slice(i, i + n)); i += n; if (!f.lineas.length) break;
-    }
+    // Cada línea de factura puede ocupar varias filas: descripciones con saltos de línea
+    // (p. ej. cartuchos de gas con el texto UN 2037) o demasiado largas para la columna.
+    doc.setFont("Calibri", "normal"); doc.setFontSize(SL);
+    const rows = [];
+    f.lineas.forEach(l => {
+      const partes = String(l.descripcion ?? "").split(/\r?\n/).map(x => x.replace(/\s+$/, "")).filter((x, k) => k === 0 || x.trim());
+      const txt = [];
+      partes.forEach(x => txt.push(...(x ? doc.splitTextToSize(x, DESC_W) : [""])));
+      rows.push(txt.map((d, k) => k ? { descripcion: d, cont: true } : { ...l, descripcion: d }));
+    });
+    // Paginar sin partir una línea de factura entre dos páginas
+    const pages = [[]];
+    const n = Math.floor((LINE_LAST - LINE_Y0) / LINE_PITCH) + 1;
+    rows.forEach(g => {
+      let pg = pages[pages.length - 1];
+      if (pg.length && pg.length + g.length > n) { pg = []; pages.push(pg); }
+      pg.push(...g);
+    });
 
     pages.forEach((lineas, p) => {
       if (p) doc.addPage();
@@ -69,6 +83,7 @@
       lbl("PRECIO", 368.5, 242.3); lbl("% DESCUENTOS", 419.5, 242.3); lbl("IMPORTE", 524.4, 242.3);
       lineas.forEach((l, k) => {
         const y = LINE_Y0 + k * LINE_PITCH, o = { size: SL };
+        if (l.cont) { t(l.descripcion, 93.6, y, o); return; }
         t(l.codigo, 19.8, y, o); t(l.descripcion, 93.6, y, o);
         t(qty(l.cantidad), 345.7, y, { ...o, align: "right" });
         t(eur(l.precio, 3), 399.6, y, { ...o, align: "right" });
