@@ -5,13 +5,15 @@
   "use strict";
   const LABEL = [0, 191, 255], DEEP = [0, 0, 255], BLACK = [0, 0, 0];
   const S = 9.7, SL = 9.0, ASC = 0.75;             // tamaños de texto y ascendente de Calibri
-  const LINE_Y0 = 270.5, LINE_PITCH = 12.12, LINE_LAST = 640;  // tabla de líneas
-  const DESC_W = 205;                               // ancho de la columna DESCRIPCIÓN (pt)
+  const LINE_Y0 = 270.5, LINE_PITCH = 12.12, LINE_LAST = 647;  // tabla de líneas (32 filas por página, como Factusol)
+  const DESC_W = 212;                               // ancho de la columna DESCRIPCIÓN (pt), medido con facturas de Factusol
   const eur = (n, d = 2) => (Number(n) || 0).toLocaleString("es-ES", { minimumFractionDigits: d, maximumFractionDigits: d, useGrouping: "always" });
   const qty = n => Number.isInteger(+n) ? String(+n) : eur(n, 2);
   const pct = n => (Number(n) || 0).toLocaleString("es-ES", { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + "%";
 
   function facturaIberlus(jsPDF, f, R) {
+    // Factusol imprime hoy todas las facturas (también las de 2025) con el modelo actual
+    f = { ...f, modelo2025: false };
     const doc = new jsPDF({ unit: "pt", format: "a4", compress: true });
     doc.addFileToVFS("Carlito.ttf", R.carlito); doc.addFont("Carlito.ttf", "Calibri", "normal");
     doc.addFileToVFS("CarlitoB.ttf", R.carlitoBold); doc.addFont("CarlitoB.ttf", "Calibri", "bold");
@@ -37,7 +39,8 @@
       const partes = String(l.descripcion ?? "").split(/\r?\n/).map(x => x.replace(/\s+$/, "")).filter((x, k) => k === 0 || x.trim());
       const txt = [];
       partes.forEach(x => txt.push(...(x ? doc.splitTextToSize(x, DESC_W) : [""])));
-      rows.push(txt.map((d, k) => k ? { descripcion: d, cont: true } : { ...l, descripcion: d }));
+      // Como Factusol: código y descripción arriba; cantidad, precio, descuento e importe en el último renglón
+      rows.push(txt.map((d, k) => ({ descripcion: d, codigo: k ? "" : l.codigo, nums: k === txt.length - 1 ? l : null })));
     });
     // Paginar sin partir una línea de factura entre dos páginas
     const pages = [[]];
@@ -48,6 +51,7 @@
       pg.push(...g);
     });
 
+    const rect = String(f.serie) === "9" || String(f.serie) === "99";  // factura rectificativa (serie 99 en Factusol)
     pages.forEach((lineas, p) => {
       if (p) doc.addPage();
       if (f.prueba) {
@@ -69,12 +73,18 @@
       const y0 = f.modelo2025 ? 86.4 : 97.7, py = f.modelo2025 ? 17.0 : 17.0;
       t(c.linea2, 309.0, y0);
       t(c.domicilio, 309.0, y0 + py);
-      t(c.cp, 309.0, y0 + 2 * py); t(c.poblacion, f.modelo2025 ? 340.2 : 342.9, y0 + 2 * py);
+      t(c.cp, 309.0, y0 + 2 * py);
+      // la población va a continuación del CP; si el CP es largo (p. ej. Portugal "4950-85") se desplaza para no pisarlo
+      doc.setFont("Calibri", "normal"); doc.setFontSize(S);
+      t(c.poblacion, Math.max(f.modelo2025 ? 340.2 : 342.9, 309.0 + doc.getTextWidth(String(c.cp || "")) + 3), y0 + 2 * py);
       t(c.provincia, 309.0, y0 + 3 * py);
       // recuadros de datos
-      [[16.9, 101.9], [155.8, 240.7], [314.5, 399.5], [493.1, 578.1]].forEach(([a, b]) => doc.rect(a, 192.6, b - a, 28.3, "S"));
+      [[16.9, 101.9], [155.8, rect ? 269.0 : 240.7], [314.5, 399.5], [493.1, 578.1]].forEach(([a, b]) => doc.rect(a, 192.6, b - a, 28.3, "S"));
       lbl("FECHA", 45.4, 197.0); t(f.fecha, 57.85, 208.2, { bold: true, align: "center" });
-      lbl("Nº FACTURA", 172.9, 197.0); t(f.serie, 167.3, 208.2, { bold: true }); t(f.numero, 187.1, 208.2, { bold: true });
+      if (rect) {
+        t("Nº FRA. RECTIFICATIVA", 164.4, 197.0, { bold: true });
+        t("99", 170.0, 208.2, { bold: true }); t(String(f.numero).padStart(6, "0"), 206.9, 208.2, { bold: true });
+      } else { lbl("Nº FACTURA", 172.9, 197.0); t(f.serie, 167.3, 208.2, { bold: true }); t(f.numero, 187.1, 208.2, { bold: true }); }
       lbl("CLIENTE", 340.2, 197.0); t(c.codigo, 340.2, 208.2, { bold: true });
       lbl("N.I.F.", 518.7, 197.0); t(c.nif, 529.7, 208.2, { bold: true, align: "center" });
       // tabla de líneas
@@ -83,43 +93,57 @@
       lbl("PRECIO", 368.5, 242.3); lbl("% DESCUENTOS", 419.5, 242.3); lbl("IMPORTE", 524.4, 242.3);
       lineas.forEach((l, k) => {
         const y = LINE_Y0 + k * LINE_PITCH, o = { size: SL };
-        if (l.cont) { t(l.descripcion, 93.6, y, o); return; }
         t(l.codigo, 19.8, y, o); t(l.descripcion, 93.6, y, o);
-        // Líneas de texto (cantidad 0, p. ej. asteriscos o condiciones de pago): solo la descripción.
-        // Un regalo sin cargo lleva cantidad, así que sí sale con precio e importe 0.
-        if (!+l.cantidad) return;
-        t(qty(l.cantidad), 345.7, y, { ...o, align: "right" });
-        t(eur(l.precio, 3), 399.6, y, { ...o, align: "right" });
-        if (+l.descuento) { t(eur(l.descuento, 2), 437.2, y, { ...o, align: "right" }); t("%", 441.3, y, o); }
-        t(eur(l.importe), 569.6, y, { ...o, align: "right" });
+        const v = l.nums; if (!v) return;
+        // Como Factusol: los ceros no se imprimen (cantidad, precio, descuento o importe a 0 quedan en blanco)
+        if (+v.cantidad) t(qty(v.cantidad), 345.7, y, { ...o, align: "right" });
+        if (+v.precio) t(eur(v.precio, 3), 399.6, y, { ...o, align: "right" });
+        if (+v.descuento) { t(eur(v.descuento, 2), 437.2, y, { ...o, align: "right" }); t("%", 441.3, y, o); }
+        if (+v.importe) t(eur(v.importe), 569.6, y, { ...o, align: "right" });
       });
       doc.setDrawColor(0); doc.line(595.1, 17.0, 595.1, 665.8);
-      if (p < pages.length - 1) return;
-      // pie
-      t("IMPORTANTE: INDICAMOS AL PIE DE FACTURA NUEVO IBAN PARA TRANSFERENCIAS. GRACIAS", 56.6, 653.9, { font: "ArialB", bold: true, size: 9.63, asc: 0.72, color: DEEP });
+      // pie (en todas las páginas; importes, forma de pago y vencimientos solo en la última, como Factusol)
+      const ult = p === pages.length - 1;
+      if (!rect) t("IMPORTANTE: INDICAMOS AL PIE DE FACTURA NUEVO IBAN PARA TRANSFERENCIAS. GRACIAS", 56.6, 653.9, { font: "ArialB", bold: true, size: 9.63, asc: 0.72, color: DEEP });
       doc.rect(16.9, 666.0, 561.3, 34.0, "S");
       lbl("IMPORTE", 25.6, 673.1); lbl("% DTO. PP", 90.7, 673.1); lbl("PORTES", 161.5, 673.1);
       lbl("BASE IMPONIBLE", 212.6, 673.1); lbl("% I.V.A/IGIC", 328.8, 673.1); lbl("% R.E", 433.7, 673.1); lbl("TOTAL:", 532.9, 673.1);
       doc.rect(19.7, 708.6, 561.2, 28.3, "S");
       const ty = 715.7;
+      if (ult) {
       t(eur(f.importe), 73.7, ty, { align: "right" });
       if (+f.dtoPP) t(pct(f.dtoPP), 120.0, ty, { align: "right" });
       if (+f.portes) t(eur(f.portes), 193.0, ty, { align: "right" });
       t(eur(f.base), 272.0, ty, { align: "right" });
-      t(pct(f.ivaPct ?? 21), 314.9, ty); t(eur(f.iva), 382.6, ty, { align: "right" });
+      // IVA: Factusol pone siempre 21 % y deja el importe en blanco si es 0 (facturas exentas)
+      t(pct(21), rect ? 312.1 : 314.9, ty); if (+f.iva) t(eur(f.iva), 382.6, ty, { align: "right" });
       t((f.rePct ?? 5.2).toLocaleString("es-ES", { minimumFractionDigits: 2 }) + "%", 409.5, ty);
-      if (!(f.modelo2025 && !+f.re)) t(eur(f.re), 479.0, ty, { align: "right" });
+      if (!((f.modelo2025 || rect) && !+f.re)) t(eur(f.re), 479.0, ty, { align: "right" });
       t(eur(f.total), 566.8, ty, { bold: true, align: "right" });
-      lbl("Forma de pago:", 19.8, 749.7); t(f.formaPago, 85.1, 749.7);
+      }
+      lbl("Forma de pago:", 19.8, 749.7);
       lbl("Vencimientos:", 19.8, 763.8);
-      (f.vencimientos || []).forEach((v, k) => {
+      if (rect) {
+        lbl("Domiciliación:", 19.8, 778.0);
+        if (ult) {
+          t(f.formaPago, 87.8, 749.7, { bold: true });
+          const r = f.rectificada || {};
+          t("Fra. de venta rectificada:", 314.6, 750.2, { bold: true });
+          t(r.serie, 447.8, 749.7, { align: "right" }); t(r.numero, 463.7, 749.7); t(r.fecha, 504.6, 749.7);
+          t("Total fra. rectificada:", 314.6, 767.3, { bold: true });
+          if (r.total != null) t(eur(r.total), 535.7, 766.7, { align: "right" });
+        }
+      } else {
+      if (ult) t(f.formaPago, 85.1, 749.7);
+      if (ult) (f.vencimientos || []).forEach((v, k) => {
         const y = 763.8 + k * 14.1;
         t(v.fecha || "A la vista", 133.2, y, { align: "right" }); t(eur(v.importe), 198.4, y, { align: "right" });
       });
-      const yIban = 778.0 + Math.max(0, (f.vencimientos || []).length - 1) * 14.1;
+      const yIban = 778.0 + (ult ? Math.max(0, (f.vencimientos || []).length - 1) * 14.1 : 0);
       lbl("Nuestro IBAN:", 19.8, yIban);
       t("ES87 2080 3568 0130 4000 5211 - ABANCA", 85.1, yIban, { bold: true, color: DEEP });
       doc.setDrawColor(...DEEP); doc.line(85.0, yIban + 8.3, 255.1, yIban + 8.3); doc.setDrawColor(0);
+      }
       t("Reg. Merc. Pontevedra. Folio 90, Libro 3827, inscripción 1ª, hoja PO-53644 - Iberlus Distribución Doméstica, S.L. - C.I.F. B94067253",
         79.3, 803.5, { font: "ArialB", bold: true, size: 6.69, asc: 0.72, color: LABEL });
     });
