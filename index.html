@@ -100,6 +100,19 @@ main{padding-block:14px 96px}
 .stock{font-family:var(--f-display);font-weight:700;font-size:18px;font-variant-numeric:tabular-nums;text-align:right;min-width:56px}
 .stock small{display:block;font-family:var(--f-body);font-size:11px;font-weight:500;color:var(--muted)}
 .stock.zero{color:var(--warn)} .stock.neg{color:var(--bad)}
+.row.artrow{cursor:pointer}
+.row.artrow.open{background:var(--accent-soft)}
+.hist{background:var(--bg);padding:6px 14px 10px;border-top:1px solid var(--line);border-left:3px solid var(--brand)}
+.hist .hh{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--brand2);margin:6px 0 2px}
+.hist .hh span{font-weight:500;text-transform:none;letter-spacing:0;color:var(--muted);margin-left:6px}
+.hl{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:0 10px;align-items:baseline;padding:4px 0;border-top:1px dashed var(--line);font-size:12px;line-height:1.35}
+.hh + .hl{border-top:0}
+.hl .w{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.hl .pr{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:700}
+.hl .m{color:var(--muted);font-size:11px;font-variant-numeric:tabular-nums}
+.hl .pr2{text-align:right;color:var(--muted);font-size:11px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.hist .none{font-size:12px;color:var(--muted);padding:3px 0}
+.hist .linkbtn{font-size:12px;margin-top:2px}
 .note{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;color:var(--muted);font-size:14px}
 .note b{color:var(--ink)}
 .note.err{border-color:var(--bad)}
@@ -293,7 +306,7 @@ const view = document.getElementById("view");
 const stamp = document.getElementById("stamp");
 
 const S = { fyear: null, fopen: new Set(), fpend: false, fopenInv: new Set(), cf: "all", asort: "fecha", scrollEnd: false, scrollMonth: null, com: "34", sec: "inicio", client: null, ctab: "facturas", year: null, open: new Set(), q: "", qa: "",
-            data: null, arts: null, artsLoading: false, mcp: null, files: {} };
+            data: null, arts: null, artsLoading: false, compras: null, comprasLoading: false, artOpen: null, hmore: {}, mcp: null, files: {} };
 try { const c = localStorage.getItem("iberlus_com"); if (c === "34" || c === "36") S.com = c; } catch(e) {}
 
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -387,6 +400,18 @@ async function loadArts(){
   S.artsLoading = false; render();
 }
 
+// Compras (solo admin): las reglas de Firebase solo dejan leer "compras" al usuario admin
+async function loadCompras(){
+  if (S.compras || S.comprasLoading || !S.user || !S.user.admin) return;
+  S.comprasLoading = true;
+  try {
+    const snap = await db.collection("compras").get();
+    const m = new Map();
+    snap.forEach(d => { try { const o = JSON.parse(d.data().data); Object.keys(o).forEach(k => m.set(k, o[k])); } catch(e){} });
+    S.compras = m;
+  } catch(e){ S.comprasErr = fbErr(e); }
+  S.comprasLoading = false; if (S.sec === "almacen") viewAlmacen();
+}
 /* ---------- Vistas ---------- */
 const ST = { ok: ["ok","Cobrada"], pend: ["pend","Pendiente"], par: ["par","Parcial"], sus: ["mute","Sustituida"], cero: ["mute","0 €"] };
 const pill = (i, sinGiro) => (!sinGiro && i.giro && (i.st === "pend" || i.st === "par")) ? '<span class="pill giro">' + ST[i.st][1] + ' · giro</span>' : '<span class="pill ' + ST[i.st][0] + '">' + ST[i.st][1] + '</span>';
@@ -638,6 +663,41 @@ function viewClient(){
   }
 }
 
+// Historial del artículo en Almacén: compras (solo admin, sea cual sea el comercial elegido) y ventas a los clientes del comercial
+const HIST_C = 3, HIST_V = 5;
+function histPrice(price, dto){ const neto = price * (1 - (dto || 0) / 100);
+  return { main: eur(neto), sub: dto ? eur(price) + ' −' + num(dto) + ' %' : '' }; }
+function histLine(who, meta, price, dto){ const p = histPrice(price, dto);
+  return '<div class="hl"><span class="w">' + who + '</span><span class="pr">' + p.main + '</span><span class="m">' + meta + '</span><span class="pr2">' + p.sub + '</span></div>'; }
+function histHtml(code){
+  const C = String(code).toUpperCase();
+  let h = '<div class="hist">';
+  if (S.user && S.user.admin){
+    h += '<div class="hh">Compras<span>solo tú</span></div>';
+    if (S.comprasErr) h += '<div class="none">Las compras todavía no están disponibles (' + esc(S.comprasErr) + ').</div>';
+    else if (S.compras && !S.compras.size) h += '<div class="none">Todavía no hay compras cargadas: llegan con la próxima actualización de datos.</div>';
+    else if (!S.compras){ h += '<div class="none">Cargando compras…</div>'; loadCompras(); }
+    else {
+      const cl = S.compras.get(C) || [];
+      const show = S.hmore.c ? cl : cl.slice(0, HIST_C);
+      h += cl.length ? show.map(e => histLine(esc(e[0]), fdate(dIso(e[1])) + ' · ' + num(e[2]) + ' uds', +e[3] || 0, +e[4] || 0)).join("") : '<div class="none">Sin compras desde el 01/01/2025.</div>';
+      if (cl.length > show.length) h += '<button class="linkbtn" type="button" data-hmore="c">ver todas (' + cl.length + ')</button>';
+    }
+  }
+  h += '<div class="hh">Ventas' + (S.user && S.user.admin ? '<span>clientes de ' + esc(comName()) + '</span>' : '') + '</div>';
+  if (!S.data) h += '<div class="none">Cargando clientes…</div>';
+  else {
+    const m = new Map();
+    S.data.all.forEach(i => { if (!i.date) return; i.lines.forEach(l => { if (String(l.code).toUpperCase() !== C || l.qty <= 0) return;
+      const e = m.get(i.client); if (!e || i.date >= e.date) m.set(i.client, { code: i.client, date: i.date, qty: l.qty, price: l.price, dto: l.dto }); }); });
+    const vl = [...m.values()].sort((a,b) => b.date - a.date);
+    const show = S.hmore.v ? vl : vl.slice(0, HIST_V);
+    h += vl.length ? show.map(e => { const c = S.data.byCode.get(e.code); return histLine(esc((c && c.name) || e.code), fdate(e.date) + ' · ' + num(e.qty) + ' uds', e.price, e.dto); }).join("") : '<div class="none">Ningún cliente lo ha comprado.</div>';
+    if (vl.length > show.length) h += '<button class="linkbtn" type="button" data-hmore="v">ver todas (' + vl.length + ')</button>';
+  }
+  return h + '</div>';
+}
+function comName(){ const b = document.querySelector('.seg [data-com="' + S.com + '"]'); return b ? b.textContent.trim() : "comercial " + S.com; }
 function viewAlmacen(){
   if (!S.user) return;
   if (!S.arts){
@@ -652,10 +712,14 @@ function viewAlmacen(){
   if (!words.length) h += '<div class="note">Escribe un código o parte de la descripción (por ejemplo <b>copa vino</b> o <b>H23820</b>) para ver el stock actual.</div>';
   else {
     h += '<p class="count">' + list.length.toLocaleString("es-ES") + ' artículos' + (list.length > 100 ? ' · se muestran los 100 primeros' : '') + '</p>';
-    h += '<div class="list">' + (list.length ? list.slice(0,100).map(a => '<div class="row" style="cursor:default"><div class="main"><div class="name" style="white-space:normal">' + esc(a.desc) + '</div><div class="sub" style="font-family:var(--f-mono)">' + esc(a.code) + '</div></div>' +
-      '<div class="stock' + (a.stock < 0 ? " neg" : a.stock === 0 ? " zero" : "") + '">' + num(a.stock) + '<small>en stock</small></div></div>').join("") : '<div class="empty">Ningún artículo coincide.</div>') + '</div>';
+    h += '<div class="list">' + (list.length ? list.slice(0,100).map(a => { const o = S.artOpen === a.code;
+      return '<div class="row artrow' + (o ? ' open' : '') + '" role="button" tabindex="0" aria-expanded="' + o + '" data-artopen="' + esc(a.code) + '"><div class="main"><div class="name" style="white-space:normal">' + esc(a.desc) + '</div><div class="sub" style="font-family:var(--f-mono)">' + esc(a.code) + '</div></div>' +
+      '<div class="stock' + (a.stock < 0 ? " neg" : a.stock === 0 ? " zero" : "") + '">' + num(a.stock) + '<small>en stock</small></div></div>' + (o ? histHtml(a.code) : ''); }).join("") : '<div class="empty">Ningún artículo coincide.</div>') + '</div>';
   }
   view.innerHTML = h;
+  view.querySelectorAll("[data-artopen]").forEach(r => { const go = () => { const c = r.dataset.artopen; S.artOpen = S.artOpen === c ? null : c; S.hmore = {}; viewAlmacen(); };
+    r.onclick = go; r.onkeydown = e => { if (e.key === "Enter" || e.key === " "){ e.preventDefault(); go(); } }; });
+  view.querySelectorAll("[data-hmore]").forEach(b => b.onclick = e => { e.stopPropagation(); S.hmore[b.dataset.hmore] = true; viewAlmacen(); });
   const inp = document.getElementById("qa");
   let t; inp.oninput = () => { clearTimeout(t); t = setTimeout(() => { S.qa = inp.value; const pos = inp.selectionStart; viewAlmacen(); const n = document.getElementById("qa"); n.focus(); try{ n.setSelectionRange(pos,pos); }catch(e){} }, 180); };
 }
@@ -836,7 +900,7 @@ function viewPreguntas(){
   view.querySelectorAll("[data-cli]").forEach(b => b.onclick = () => openClient(b.dataset.cli, S.pq === "artcli" ? "articulos" : "facturas", S.pq === "artcli" ? "uds" : null));
 }
 
-const APP_VERSION = "16/11/2026 · Factura igual que Factusol";
+const APP_VERSION = "17/11/2026 · Compras y ventas en Almacén";
 function viewCuenta(){
   const u = S.user || {};
   view.innerHTML = '<div class="acc"><div class="card"><h3>' + esc(u.nombre || "Tu cuenta") + '</h3><div class="count" style="margin:0">' + esc(u.email || "") + '</div></div>' +
@@ -951,7 +1015,7 @@ document.getElementById("lgForgot").onclick = async () => {
   catch(e){ lgMsg.className = "msg err"; lgMsg.textContent = "No se pudo enviar el correo (" + (e.code || "error") + ")."; }
 };
 auth.onAuthStateChanged(async u => {
-  S.data = null; S.arts = null; S.artsErr = null; S.user = null; S.client = null; S.sec = "inicio";
+  S.data = null; S.arts = null; S.artsErr = null; S.user = null; S.client = null; S.sec = "inicio"; S.compras = null; S.comprasErr = null; S.artOpen = null; S.hmore = {};
   if (!u){ appEl.hidden = true; loginEl.hidden = false; return; }
   loginEl.hidden = true; appEl.hidden = false;
   view.innerHTML = '<div class="note"><b>Comprobando tu acceso…</b></div>';
