@@ -298,7 +298,7 @@ nav.bottom button[aria-selected="true"]{color:var(--accent)}
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="factura.js?v=2026-11-20"></script>
+<script src="factura.js?v=2026-11-20b"></script>
 <script>
 (function(){
 "use strict";
@@ -470,7 +470,7 @@ async function downloadInv(key, btn){
     const f = { serie: i.serie, numero: i.num, fecha: fdate(i.date), prueba: !i.cf, modelo2025: !!(i.date && i.date.getFullYear() < 2026),
       cliente: { codigo: i.client, fiscal: c.fiscal || i.name, linea2: c.comName || "", domicilio: g(0), cp: g(1, c.cp), poblacion: g(2, c.pob), provincia: g(3, c.prov), nif: g(5, c.nif) },
       rectificada: rect,
-      lineas: i.lines.map(l => ({ codigo: l.code, descripcion: l.desc, cantidad: l.qty, precio: l.price, descuento: l.dto, importe: l.imp })),
+      lineas: i.lines.map(l => ({ codigo: l.code, descripcion: l.desc, cantidad: l.qty, precio: l.price, descuento: l.dto, descuento1: l.d1, descuento2: l.d2, importe: l.imp })),
       importe: base, dtoPP: i.pp && base ? i.pp / base * 100 : 0, portes: i.portes, base: i.base, iva: i.iva, ivaPct: i.base ? Math.round(Math.abs(i.iva / i.base) * 100) : 21, re: i.re, total: i.total, formaPago: i.fp,
       vencimientos: vtos };
     const doc = window.facturaIberlus(window.jspdf.jsPDF, f, window.FACTURA_RES);
@@ -915,7 +915,7 @@ function viewPreguntas(){
   view.querySelectorAll("[data-cli]").forEach(b => b.onclick = () => openClient(b.dataset.cli, S.pq === "artcli" ? "articulos" : "facturas", S.pq === "artcli" ? "uds" : null));
 }
 
-const APP_VERSION = "20/11/2026 · Factura definitiva (domicilio y vencimientos)";
+const APP_VERSION = "20/11/2026 · Factura con dos descuentos";
 function viewCuenta(){
   const u = S.user || {};
   view.innerHTML = '<div class="acc"><div class="card"><h3>' + esc(u.nombre || "Tu cuenta") + '</h3><div class="count" style="margin:0">' + esc(u.email || "") + '</div></div>' +

@@ -98,7 +98,11 @@
         // Como Factusol: los ceros no se imprimen (cantidad, precio, descuento o importe a 0 quedan en blanco)
         if (+v.cantidad) t(qty(v.cantidad), 345.7, y, { ...o, align: "right" });
         if (+v.precio) t(eur(v.precio, 3), 399.6, y, { ...o, align: "right" });
-        if (+v.descuento) { t(eur(v.descuento, 2), 437.2, y, { ...o, align: "right" }); t("%", 441.3, y, o); }
+        // Como Factusol: con dos descuentos, cada uno en su columna (43,00 %  15,00 %)
+        if (+v.descuento2) {
+          t(eur(v.descuento1, 2), 437.2, y, { ...o, align: "right" }); t("%", 441.3, y, o);
+          t(eur(v.descuento2, 2), 479.7, y, { ...o, align: "right" }); t("%", 483.8, y, o);
+        } else if (+v.descuento) { t(eur(v.descuento, 2), 437.2, y, { ...o, align: "right" }); t("%", 441.3, y, o); }
         if (+v.importe) t(eur(v.importe), 569.6, y, { ...o, align: "right" });
       });
       doc.setDrawColor(0); doc.line(595.1, 17.0, 595.1, 665.8);
