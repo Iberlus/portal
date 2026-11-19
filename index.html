@@ -298,7 +298,7 @@ nav.bottom button[aria-selected="true"]{color:var(--accent)}
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="factura.js?v=2026-11-16"></script>
+<script src="factura.js?v=2026-11-20"></script>
 <script>
 (function(){
 "use strict";
@@ -357,7 +357,8 @@ function hydrate(c, out){
     const inv = { ej: str(v.ej), serie: str(v.serie), num: str(v.num), date: dIso(v.date), client: cl.code, name: cl.fiscal || cl.name,
       base: +v.base || 0, total: +v.total || 0, cob: str(v.cob).toUpperCase(), fp: v.fp || "", neto: +v.neto || 0, pp: +v.pp || 0, portes: +v.portes || 0,
       iva: +v.iva || 0, re: +v.re || 0, venc: dIso(v.venc), pend: Math.round((+v.pend || 0) * 100) / 100,
-      lines: (v.lines || []).map(l => ({ n: +l[0] || 0, code: str(l[1]), desc: str(l[2]), qty: +l[3] || 0, price: +l[4] || 0, dto: +l[5] || 0, imp: +l[6] || 0 })) };
+      lines: (v.lines || []).map(l => ({ n: +l[0] || 0, code: str(l[1]), desc: str(l[2]), qty: +l[3] || 0, price: +l[4] || 0, dto: +l[5] || 0, imp: +l[6] || 0, d1: +l[7] || 0, d2: +l[8] || 0 })),
+      vtos: Array.isArray(v.vtos) ? v.vtos : null, cf: Array.isArray(v.cf) ? v.cf : null, rect: Array.isArray(v.rect) ? v.rect : null };
     inv.key = inv.ej + "|" + inv.serie + "|" + inv.num;
     inv.giro = /giro/i.test(inv.fp);
     inv.st = inv.pend > 0.004 ? (inv.pend < inv.total - 0.01 ? "par" : "pend") : (inv.cob === "SUSTITUIDA" ? "sus" : (inv.total === 0 ? "cero" : "ok"));
@@ -452,7 +453,7 @@ function brandFrom(img){
   const hx = v => Math.round(v).toString(16).padStart(2, "0");
   return "#" + hx(r) + hx(g) + hx(bb);
 }
-const dlBtn = i => '<div class="dlrow"><button class="btn dl" type="button" data-dl="' + esc(i.key) + '">Descargar PDF (prueba)</button></div>';
+const dlBtn = i => '<div class="dlrow"><button class="btn dl" type="button" data-dl="' + esc(i.key) + '">Descargar PDF</button></div>';
 async function downloadInv(key, btn){
   const i = S.data && S.data.byKey.get(key); if (!i || btn.disabled) return;
   const c = S.data.byCode.get(i.client) || {};
@@ -461,11 +462,17 @@ async function downloadInv(key, btn){
   try {
     if (!window.jspdf || !window.facturaIberlus) return done("No disponible");
     const fp = (i.fp || "").toUpperCase(), base = i.neto || i.base;
-    const f = { serie: i.serie, numero: i.num, fecha: fdate(i.date), prueba: true, modelo2025: !!(i.date && i.date.getFullYear() < 2026),
-      cliente: { codigo: i.client, fiscal: c.fiscal || i.name, linea2: c.comName || "", domicilio: "", cp: c.cp || "", poblacion: c.pob || "", provincia: c.prov || "", nif: c.nif || "" },
+    // datos del cliente tal como están en la factura (exportación desde 19/11/2026), como los imprime Factusol; sin esos datos, los de la ficha
+    const cf = i.cf, g = (k, alt) => cf ? String(cf[k] == null ? "" : cf[k]) : (alt || "");
+    const vtos = i.vtos && i.vtos.length ? i.vtos.map(x => ({ fecha: x[0] ? fdate(dIso(x[0])) : null, importe: +x[1] || 0 }))
+      : [{ fecha: /CONTADO/.test(fp) || !i.venc ? null : fdate(i.venc), importe: i.total }];
+    const rect = i.rect ? { serie: i.rect[1], numero: i.rect[2], fecha: i.rect[3] ? fdate(dIso(i.rect[3])) : "", total: i.rect[4] } : null;
+    const f = { serie: i.serie, numero: i.num, fecha: fdate(i.date), prueba: !i.cf, modelo2025: !!(i.date && i.date.getFullYear() < 2026),
+      cliente: { codigo: i.client, fiscal: c.fiscal || i.name, linea2: c.comName || "", domicilio: g(0), cp: g(1, c.cp), poblacion: g(2, c.pob), provincia: g(3, c.prov), nif: g(5, c.nif) },
+      rectificada: rect,
       lineas: i.lines.map(l => ({ codigo: l.code, descripcion: l.desc, cantidad: l.qty, precio: l.price, descuento: l.dto, importe: l.imp })),
       importe: base, dtoPP: i.pp && base ? i.pp / base * 100 : 0, portes: i.portes, base: i.base, iva: i.iva, ivaPct: i.base ? Math.round(Math.abs(i.iva / i.base) * 100) : 21, re: i.re, total: i.total, formaPago: i.fp,
-      vencimientos: [{ fecha: /CONTADO/.test(fp) || !i.venc ? null : fdate(i.venc), importe: i.total }] };
+      vencimientos: vtos };
     const doc = window.facturaIberlus(window.jspdf.jsPDF, f, window.FACTURA_RES);
     const name = (f.cliente.fiscal || "Factura").replace(/,/g, "").replace(/\s+/g, "_").replace(/[^A-Za-z0-9_.\-]/g, "_") + "_Factura_" + f.serie + "-" + f.numero + ".pdf";
     const url = URL.createObjectURL(doc.output("blob")), a = document.createElement("a");
@@ -606,7 +613,8 @@ function viewClients(){
 
 function lineHtml(l){
   const neto = l.price * (1 - l.dto/100);
-  const p = l.dto ? '<s>' + eur(l.price) + '</s><span class="dto">−' + num(l.dto) + ' %</span><b>' + eur(neto) + '</b>' : '<b>' + eur(l.price) + '</b>';
+  const dt = l.d2 ? num(l.d1) + '+' + num(l.d2) : num(l.dto);
+  const p = l.dto ? '<s>' + eur(l.price) + '</s><span class="dto">−' + dt + ' %</span><b>' + eur(neto) + '</b>' : '<b>' + eur(l.price) + '</b>';
   return '<div class="ln"><div class="d"><b>' + num(l.qty) + ' uds</b> – <span class="c">' + esc(l.code || "s/c") + '</span> – ' + esc(l.desc || "—") + '</div><div class="p">' + p + '</div></div>';
 }
 
@@ -907,7 +915,7 @@ function viewPreguntas(){
   view.querySelectorAll("[data-cli]").forEach(b => b.onclick = () => openClient(b.dataset.cli, S.pq === "artcli" ? "articulos" : "facturas", S.pq === "artcli" ? "uds" : null));
 }
 
-const APP_VERSION = "20/11/2026 · Stock Redondela y Tienda Vigo";
+const APP_VERSION = "20/11/2026 · Factura definitiva (domicilio y vencimientos)";
 function viewCuenta(){
   const u = S.user || {};
   view.innerHTML = '<div class="acc"><div class="card"><h3>' + esc(u.nombre || "Tu cuenta") + '</h3><div class="count" style="margin:0">' + esc(u.email || "") + '</div></div>' +

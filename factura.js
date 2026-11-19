@@ -135,11 +135,14 @@
         }
       } else {
       if (ult) t(f.formaPago, 85.1, 749.7);
-      if (ult) (f.vencimientos || []).forEach((v, k) => {
-        const y = 763.8 + k * 14.1;
-        t(v.fecha || "A la vista", 133.2, y, { align: "right" }); t(eur(v.importe), 198.4, y, { align: "right" });
+      // vencimientos: uno debajo de otro; si hay más de 2, en dos columnas para no pisar el IBAN ni el pie
+      const vs = f.vencimientos || [], filas = vs.length > 2 ? Math.ceil(vs.length / 2) : vs.length;
+      if (ult) vs.forEach((v, k) => {
+        const fila = vs.length > 2 ? k % filas : k, col = vs.length > 2 ? Math.floor(k / filas) : 0;
+        const y = 763.8 + fila * 14.1, dx = col * 130;
+        t(v.fecha || "A la vista", 133.2 + dx, y, { align: "right" }); t(eur(v.importe), 198.4 + dx, y, { align: "right" });
       });
-      const yIban = 778.0 + (ult ? Math.max(0, (f.vencimientos || []).length - 1) * 14.1 : 0);
+      const yIban = 778.0 + (ult ? Math.max(0, filas - 1) * 14.1 : 0);
       lbl("Nuestro IBAN:", 19.8, yIban);
       t("ES87 2080 3568 0130 4000 5211 - ABANCA", 85.1, yIban, { bold: true, color: DEEP });
       doc.setDrawColor(...DEEP); doc.line(85.0, yIban + 8.3, 255.1, yIban + 8.3); doc.setDrawColor(0);
