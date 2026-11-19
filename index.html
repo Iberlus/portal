@@ -100,6 +100,8 @@ main{padding-block:14px 96px}
 .stock{font-family:var(--f-display);font-weight:700;font-size:18px;font-variant-numeric:tabular-nums;text-align:right;min-width:56px}
 .stock small{display:block;font-family:var(--f-body);font-size:11px;font-weight:500;color:var(--muted)}
 .stock.zero{color:var(--warn)} .stock.neg{color:var(--bad)}
+.alm{font-size:12px;color:var(--muted);margin-top:2px;font-variant-numeric:tabular-nums}
+.alm b{font-weight:700;color:var(--ink,inherit)} .alm .neg, .alm .neg b{color:var(--bad)}
 .row.artrow{cursor:pointer}
 .row.artrow.open{background:var(--accent-soft)}
 .hist{background:var(--bg);padding:6px 14px 10px;border-top:1px solid var(--line);border-left:3px solid var(--brand)}
@@ -394,7 +396,7 @@ async function loadArts(){
   try {
     const snap = await db.collection("almacen").get();
     const arts = [];
-    snap.forEach(d => { try { JSON.parse(d.data().data).forEach(a => arts.push({ code: str(a[0]), desc: str(a[1]), stock: +a[2] || 0, k: norm(str(a[0]) + " " + str(a[1])) })); } catch(e){} });
+    snap.forEach(d => { try { JSON.parse(d.data().data).forEach(a => arts.push({ code: str(a[0]), desc: str(a[1]), stock: +a[2] || 0, red: a.length > 3 ? (+a[3] || 0) : null, tda: a.length > 4 ? (+a[4] || 0) : null, k: norm(str(a[0]) + " " + str(a[1])) })); } catch(e){} });
     S.arts = arts;
   } catch(e){ S.artsErr = fbErr(e); }
   S.artsLoading = false; render();
@@ -698,6 +700,11 @@ function histHtml(code){
   return h + '</div>';
 }
 function comName(){ const b = document.querySelector('.seg [data-com="' + S.com + '"]'); return b ? b.textContent.trim() : "comercial " + S.com; }
+function almHtml(a){
+  if (a.red === null) return '';
+  const v = (n, x) => '<span' + (x < 0 ? ' class="neg"' : '') + '>' + n + ' <b>' + num(x) + '</b></span>';
+  return '<div class="alm">' + v('Redondela', a.red) + ' · ' + v('Tienda Vigo', a.tda) + '</div>';
+}
 function viewAlmacen(){
   if (!S.user) return;
   if (!S.arts){
@@ -713,7 +720,7 @@ function viewAlmacen(){
   else {
     h += '<p class="count">' + list.length.toLocaleString("es-ES") + ' artículos' + (list.length > 100 ? ' · se muestran los 100 primeros' : '') + '</p>';
     h += '<div class="list">' + (list.length ? list.slice(0,100).map(a => { const o = S.artOpen === a.code;
-      return '<div class="row artrow' + (o ? ' open' : '') + '" role="button" tabindex="0" aria-expanded="' + o + '" data-artopen="' + esc(a.code) + '"><div class="main"><div class="name" style="white-space:normal">' + esc(a.desc) + '</div><div class="sub" style="font-family:var(--f-mono)">' + esc(a.code) + '</div></div>' +
+      return '<div class="row artrow' + (o ? ' open' : '') + '" role="button" tabindex="0" aria-expanded="' + o + '" data-artopen="' + esc(a.code) + '"><div class="main"><div class="name" style="white-space:normal">' + esc(a.desc) + '</div><div class="sub" style="font-family:var(--f-mono)">' + esc(a.code) + '</div>' + almHtml(a) + '</div>' +
       '<div class="stock' + (a.stock < 0 ? " neg" : a.stock === 0 ? " zero" : "") + '">' + num(a.stock) + '<small>en stock</small></div></div>' + (o ? histHtml(a.code) : ''); }).join("") : '<div class="empty">Ningún artículo coincide.</div>') + '</div>';
   }
   view.innerHTML = h;
@@ -900,7 +907,7 @@ function viewPreguntas(){
   view.querySelectorAll("[data-cli]").forEach(b => b.onclick = () => openClient(b.dataset.cli, S.pq === "artcli" ? "articulos" : "facturas", S.pq === "artcli" ? "uds" : null));
 }
 
-const APP_VERSION = "17/11/2026 · Compras y ventas en Almacén";
+const APP_VERSION = "20/11/2026 · Stock Redondela y Tienda Vigo";
 function viewCuenta(){
   const u = S.user || {};
   view.innerHTML = '<div class="acc"><div class="card"><h3>' + esc(u.nombre || "Tu cuenta") + '</h3><div class="count" style="margin:0">' + esc(u.email || "") + '</div></div>' +
