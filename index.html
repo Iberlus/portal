@@ -259,11 +259,12 @@ nav.bottom button[aria-selected="true"]{color:var(--accent)}
 .pl-act [data-del]{color:var(--bad)}
 .chipbtn.pe-del{color:var(--bad);border-color:var(--bad)}
 .ac{position:absolute;left:0;top:100%;z-index:20;margin-top:2px;width:min(520px,calc(100vw - 48px));max-height:300px;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.18)}
-.ac-it{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;width:100%;border:0;border-top:1px solid var(--line);background:transparent;text-align:left;padding:9px 10px;cursor:pointer;font-size:13px}
+.ac-it{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;width:100%;border:0;border-top:1px solid var(--line);background:transparent;text-align:left;padding:9px 10px;cursor:pointer;font-size:13px}
 .ac-it:first-child{border-top:0}
 .ac-it.on,.ac-it:hover{background:var(--accent-soft)}
 .ac-it .c{font-family:var(--f-mono);font-weight:600;white-space:nowrap}
 .ac-it .dd{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ac-it .st{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right} .ac-it .st.zero{color:var(--warn)} .ac-it .st.neg{color:var(--bad)}
 .ac-note{padding:9px 10px;font-size:12.5px;color:var(--muted)}
 .pe-btns{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:4px}
 .pe-foot{position:sticky;bottom:calc(64px + env(safe-area-inset-bottom,0px));z-index:4;margin-top:14px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px;box-shadow:0 -4px 16px rgba(0,0,0,.08)}
@@ -960,7 +961,7 @@ function viewPreguntas(){
   view.querySelectorAll("[data-cli]").forEach(b => b.onclick = () => openClient(b.dataset.cli, S.pq === "artcli" ? "articulos" : "facturas", S.pq === "artcli" ? "uds" : null));
 }
 
-const APP_VERSION = "25/11/2026 · Buscar artículo por nombre";
+const APP_VERSION = "25/11/2026 · Stock en el buscador";
 function viewCuenta(){
   const u = S.user || {};
   view.innerHTML = '<div class="acc"><div class="card"><h3>' + esc(u.nombre || "Tu cuenta") + '</h3><div class="count" style="margin:0">' + esc(u.email || "") + '</div></div>' +
@@ -1272,7 +1273,7 @@ function acShow(inp){
   ac._m = m; ac._h = 0;
   if (!m.length){ ac.hidden = false; ac.innerHTML = '<div class="ac-note">No hay artículos con ese código o nombre: escribe la descripción a mano.</div>'; return; }
   ac.hidden = false;
-  ac.innerHTML = m.slice(0, 40).map((a, k) => '<button type="button" class="ac-it' + (k ? '' : ' on') + '" data-ac="' + k + '" tabindex="-1"><span class="c">' + esc(a.code) + '</span><span class="dd">' + esc(a.desc) + '</span></button>').join("") +
+  ac.innerHTML = m.slice(0, 40).map((a, k) => '<button type="button" class="ac-it' + (k ? '' : ' on') + '" data-ac="' + k + '" tabindex="-1"><span class="c">' + esc(a.code) + '</span><span class="dd">' + esc(a.desc) + '</span><span class="st' + (a.stock < 0 ? ' neg' : a.stock === 0 ? ' zero' : '') + '">' + num(a.stock) + ' uds</span></button>').join("") +
     (m.length > 40 ? '<div class="ac-note">' + m.length.toLocaleString("es-ES") + ' artículos · sigue escribiendo para acotar</div>' : '');
 }
 function acHide(inp){ const ac = inp && inp.parentNode.querySelector(".ac"); if (ac){ ac.hidden = true; ac.innerHTML = ""; ac._m = null; } }
