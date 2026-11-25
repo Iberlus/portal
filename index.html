@@ -960,7 +960,7 @@ function viewPreguntas(){
   view.querySelectorAll("[data-cli]").forEach(b => b.onclick = () => openClient(b.dataset.cli, S.pq === "artcli" ? "articulos" : "facturas", S.pq === "artcli" ? "uds" : null));
 }
 
-const APP_VERSION = "25/11/2026 · Borrar presupuestos";
+const APP_VERSION = "25/11/2026 · Buscar artículo por nombre";
 function viewCuenta(){
   const u = S.user || {};
   view.innerHTML = '<div class="acc"><div class="card"><h3>' + esc(u.nombre || "Tu cuenta") + '</h3><div class="count" style="margin:0">' + esc(u.email || "") + '</div></div>' +
@@ -1239,7 +1239,7 @@ function preLineHtml(l, i, n){
   const act = '<div class="pl-act"><button type="button" data-mv="-1" aria-label="Subir"' + (i ? '' : ' disabled') + '>↑</button><button type="button" data-mv="1" aria-label="Bajar"' + (i < n - 1 ? '' : ' disabled') + '>↓</button><button type="button" data-del aria-label="Borrar línea">✕</button></div>';
   if (l.t === "x") return '<div class="pl txt" data-k="' + l.k + '"><textarea class="in" data-f="desc" rows="2" placeholder="Texto, por ejemplo: Forma de pago: transferencia a la entrega">' + esc(l.desc) + '</textarea>' + act + '</div>';
   const nf = (f, lbl) => '<label class="pl-n">' + lbl + '<input class="in" data-f="' + f + '" inputmode="decimal" enterkeyhint="next" autocomplete="off" value="' + esc(l[f]) + '"></label>';
-  return '<div class="pl" data-k="' + l.k + '"><div class="pl-r1"><div class="pl-code"><input class="in mono" data-f="code" placeholder="Código" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="next" value="' + esc(l.code) + '"><div class="ac" hidden></div></div>' +
+  return '<div class="pl" data-k="' + l.k + '"><div class="pl-r1"><div class="pl-code"><input class="in mono" data-f="code" placeholder="Código o nombre" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="next" value="' + esc(l.code) + '"><div class="ac" hidden></div></div>' +
     '<input class="in" data-f="desc" placeholder="Descripción" enterkeyhint="next" autocomplete="off" value="' + esc(l.desc) + '"></div>' +
     '<div class="pl-r2">' + nf("qty", "Uds") + nf("price", "Precio") + nf("d1", "Dto 1 %") + nf("d2", "Dto 2 %") + '<div class="pl-tot"><small>Total</small><b data-tot>' + eur(lineImp(l)) + '</b></div></div>' + act + '</div>';
 }
@@ -1255,10 +1255,13 @@ function preTotRender(){
 }
 const lineOf = el => { const row = el.closest(".pl"); if (!row) return {}; const i = [...row.parentNode.children].indexOf(row); return { row, i, l: P.draft.lines[i] }; };
 function acMatches(q){
-  q = q.trim().toUpperCase(); if (!q || !S.arts) return [];
-  const m = [];
-  for (const a of S.arts){ if (!a.cu) a.cu = a.code.toUpperCase(); if (a.cu.startsWith(q)) m.push(a); }
-  return m.sort((a, b) => (a.cu === q ? -1 : b.cu === q ? 1 : a.cu.localeCompare(b.cu, "es", { numeric: true })));
+  const qc = q.trim().toUpperCase(), words = norm(q).split(/\s+/).filter(Boolean); if (!qc || !S.arts) return [];
+  const byCode = [], byName = [];
+  for (const a of S.arts){ if (!a.cu) a.cu = a.code.toUpperCase();
+    if (a.cu.startsWith(qc)) byCode.push(a); else if (words.every(w => a.k.includes(w))) byName.push(a); }
+  const cmp = (a, b) => a.cu.localeCompare(b.cu, "es", { numeric: true });
+  byCode.sort((a, b) => (a.cu === qc ? -1 : b.cu === qc ? 1 : cmp(a, b)));
+  return byCode.concat(byName.sort(cmp));
 }
 function acShow(inp){
   const ac = inp.parentNode.querySelector(".ac"); if (!ac) return;
@@ -1267,7 +1270,7 @@ function acShow(inp){
   if (!S.arts){ ac.hidden = false; ac.innerHTML = '<div class="ac-note">' + (S.artsErr ? 'No se pudo leer el almacén' : 'Cargando artículos…') + '</div>'; return; }
   const m = acMatches(q);
   ac._m = m; ac._h = 0;
-  if (!m.length){ ac.hidden = false; ac.innerHTML = '<div class="ac-note">No existe ese código: escribe la descripción a mano.</div>'; return; }
+  if (!m.length){ ac.hidden = false; ac.innerHTML = '<div class="ac-note">No hay artículos con ese código o nombre: escribe la descripción a mano.</div>'; return; }
   ac.hidden = false;
   ac.innerHTML = m.slice(0, 40).map((a, k) => '<button type="button" class="ac-it' + (k ? '' : ' on') + '" data-ac="' + k + '" tabindex="-1"><span class="c">' + esc(a.code) + '</span><span class="dd">' + esc(a.desc) + '</span></button>').join("") +
     (m.length > 40 ? '<div class="ac-note">' + m.length.toLocaleString("es-ES") + ' artículos · sigue escribiendo para acotar</div>' : '');
