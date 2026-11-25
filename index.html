@@ -169,7 +169,7 @@ nav.bottom button[aria-selected="true"]{color:var(--accent)}
 .pendline.ok{color:var(--good)}
 .pendsum{width:100%;cursor:pointer;font:inherit;color:inherit;text-align:left}
 .pendsum:hover{border-color:var(--bad)}
-.dlrow{display:flex;justify-content:flex-end;padding-top:8px}
+.dlrow{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;padding-top:8px}
 .btn.dl{font-size:13px;padding:7px 12px}
 .btn.dl:disabled{opacity:.6;cursor:default}
 .month>button{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:2px 10px}
@@ -499,8 +499,9 @@ function brandFrom(img){
   const hx = v => Math.round(v).toString(16).padStart(2, "0");
   return "#" + hx(r) + hx(g) + hx(bb);
 }
-const dlBtn = i => '<div class="dlrow"><button class="btn dl" type="button" data-dl="' + esc(i.key) + '">Descargar PDF</button></div>';
-async function downloadInv(key, btn){
+const dlBtn = i => '<div class="dlrow">' + (canShareFiles ? '<button class="btn dl" type="button" data-dl="' + esc(i.key) + '" data-share="1">Compartir PDF</button>' : '') +
+  '<button class="btn dl" type="button" data-dl="' + esc(i.key) + '"' + (canShareFiles ? ' style="background:var(--slate)"' : '') + '>Descargar PDF</button></div>';
+async function downloadInv(key, btn, share){
   const i = S.data && S.data.byKey.get(key); if (!i || btn.disabled) return;
   const c = S.data.byCode.get(i.client) || {};
   const old = btn.textContent; btn.disabled = true; btn.textContent = "Generando…";
@@ -521,7 +522,13 @@ async function downloadInv(key, btn){
       vencimientos: vtos };
     const doc = window.facturaIberlus(window.jspdf.jsPDF, f, window.FACTURA_RES);
     const name = (f.cliente.fiscal || "Factura").replace(/,/g, "").replace(/\s+/g, "_").replace(/[^A-Za-z0-9_.\-]/g, "_") + "_Factura_" + f.serie + "-" + f.numero + ".pdf";
-    const url = URL.createObjectURL(doc.output("blob")), a = document.createElement("a");
+    const blob = doc.output("blob");
+    if (share && canShareFiles){
+      navigator.share({ files: [new File([blob], name, { type: "application/pdf" })], title: "Factura " + f.serie + "-" + f.numero })
+        .then(() => done("Compartida"), () => { btn.textContent = old; btn.disabled = false; });
+      return;
+    }
+    const url = URL.createObjectURL(blob), a = document.createElement("a");
     a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 10000);
     done("Descargada");
@@ -961,7 +968,7 @@ function viewPreguntas(){
   view.querySelectorAll("[data-cli]").forEach(b => b.onclick = () => openClient(b.dataset.cli, S.pq === "artcli" ? "articulos" : "facturas", S.pq === "artcli" ? "uds" : null));
 }
 
-const APP_VERSION = "26/11/2026 · Presupuesto con pie como la factura";
+const APP_VERSION = "26/11/2026 · Compartir factura";
 function viewCuenta(){
   const u = S.user || {};
   view.innerHTML = '<div class="acc"><div class="card"><h3>' + esc(u.nombre || "Tu cuenta") + '</h3><div class="count" style="margin:0">' + esc(u.email || "") + '</div></div>' +
@@ -1405,7 +1412,7 @@ function render(){
 
 document.querySelectorAll(".seg button").forEach(b => b.onclick = () => { if (!S.user || !S.user.admin || S.com === b.dataset.com) return; S.com = b.dataset.com; S.client = null; S.q = ""; S.fopen = new Set(); S.fopenInv = new Set(); try{ localStorage.setItem("iberlus_com", S.com); }catch(e){} render(); loadAll(); });
 document.getElementById("userBtn").onclick = () => { S.sec = S.sec === "cuenta" ? "inicio" : "cuenta"; render(); window.scrollTo(0,0); };
-view.addEventListener("click", e => { const b = e.target.closest("[data-dl]"); if (b) downloadInv(b.dataset.dl, b); });
+view.addEventListener("click", e => { const b = e.target.closest("[data-dl]"); if (b) downloadInv(b.dataset.dl, b, !!b.dataset.share); });
 document.querySelectorAll("nav.bottom button").forEach(b => b.onclick = () => { if (S.sec === "presupuestos" && b.dataset.sec === "presupuestos" && P.mode !== "list"){ if (!preLeave()) return; P.mode = "list"; P.draft = null; P.cur = null; P.dirty = false; viewPres(true); window.scrollTo(0,0); return; } S.sec = b.dataset.sec; render(); window.scrollTo(0,0); });
 
 const loginEl = document.getElementById("login"), appEl = document.getElementById("app"), lgMsg = document.getElementById("lgMsg");
