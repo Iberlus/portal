@@ -3,7 +3,7 @@
    recursos = window.FACTURA_RES (fuentes Carlito y logo, definidos en factura.js) */
 (function (root) {
   "use strict";
-  const PINK = [228, 6, 138], BLUE = [0, 191, 255], NAVY = [27, 45, 82], GREY = [95, 95, 95], BLACK = [0, 0, 0], LIGHT = [244, 245, 248], LINE = [222, 225, 232];
+  const PINK = [228, 6, 138], BLUE = [0, 191, 255], NAVY = [27, 45, 82], GREY = [95, 95, 95], BLACK = [0, 0, 0], LIGHT = [244, 245, 248], LINE = [222, 225, 232], DEEP = [0, 0, 255];
   const W = 595.28, H = 841.89, L = 36, Rm = W - 36;
   const n2 = (n, min = 2, max = 2) => (Number(n) || 0).toLocaleString("es-ES", { minimumFractionDigits: min, maximumFractionDigits: max, useGrouping: "always" });
   const money = n => n2(n) + " €";
@@ -102,16 +102,28 @@
       y += h; doc.setDrawColor(...LINE); doc.setLineWidth(0.5); doc.line(L, y, Rm, y);
     });
 
-    // totales
-    if (y + 92 > BOTTOM) newPage();
-    y += 14;
+    // bloque fijo al pie de la última página (como las facturas)
+    const y0 = H - 132;
+    if (y > y0 - 14) newPage();
+    doc.setDrawColor(...LINE); doc.setLineWidth(0.8); doc.line(L, y0 - 8, Rm, y0 - 8);
     const tx = Rm - 210;
-    font(10, false, GREY); doc.text("Base imponible", tx, y + 10); font(10.5, false, BLACK); doc.text(money(p.base), Rm - 6, y + 10, { align: "right" });
-    font(10, false, GREY); doc.text("IVA 21 %", tx, y + 26); font(10.5, false, BLACK); doc.text(money(p.iva), Rm - 6, y + 26, { align: "right" });
-    doc.setFillColor(...PINK); doc.roundedRect(tx - 8, y + 34, Rm - tx + 8, 26, 4, 4, "F");
-    font(12, true, [255, 255, 255]); doc.text("TOTAL", tx, y + 51.5); doc.text(money(p.total), Rm - 6, y + 51.5, { align: "right" });
-    font(10, true, NAVY); doc.text("Validez de la oferta: 30 días.", L, y + 10);
-    font(9, false, GREY); doc.text("Precios en euros. IVA 21 % incluido en el total.", L, y + 24);
+    font(10, false, GREY); doc.text("Base imponible", tx, y0 + 10); font(10.5, false, BLACK); doc.text(money(p.base), Rm - 6, y0 + 10, { align: "right" });
+    font(10, false, GREY); doc.text("IVA 21 %", tx, y0 + 26); font(10.5, false, BLACK); doc.text(money(p.iva), Rm - 6, y0 + 26, { align: "right" });
+    doc.setFillColor(...PINK); doc.roundedRect(tx - 8, y0 + 34, Rm - tx + 8, 26, 4, 4, "F");
+    font(12, true, [255, 255, 255]); doc.text("TOTAL", tx, y0 + 51.5); doc.text(money(p.total), Rm - 6, y0 + 51.5, { align: "right" });
+    const k = p.contacto || {}, lw = tx - 20 - L;
+    let ly = y0 + 10;
+    if (k.nom || k.tel) {
+      font(10, true, BLACK); doc.text(k.nom || "", L, ly);
+      if (k.tel) { const w = doc.getTextWidth(k.nom || ""); font(10, false, BLACK); doc.text((k.nom ? " · " : "") + k.tel, L + w, ly); }
+      ly += 13;
+    }
+    if (k.mail) { font(9.5, false, GREY); doc.text(doc.splitTextToSize(k.mail, lw)[0], L, ly); }
+    font(10, true, NAVY); doc.text("Validez de la oferta: 30 días.", L, y0 + 41);
+    font(10, true, BLUE); doc.text("Nuestro IBAN:", L, y0 + 57);
+    const iw = doc.getTextWidth("Nuestro IBAN: ");
+    font(10, true, DEEP); const ib = "ES87 2080 3568 0130 4000 5211 - ABANCA"; doc.text(ib, L + iw, y0 + 57);
+    doc.setDrawColor(...DEEP); doc.setLineWidth(0.6); doc.line(L + iw, y0 + 59, L + iw + doc.getTextWidth(ib), y0 + 59);
 
     const pages = doc.getNumberOfPages();
     for (let k = 1; k <= pages; k++) {

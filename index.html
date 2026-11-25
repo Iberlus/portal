@@ -344,7 +344,7 @@ nav.bottom button[aria-selected="true"]{color:var(--accent)}
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="factura.js?v=2026-11-20b"></script>
-<script src="presupuesto.js?v=2026-11-25a"></script>
+<script src="presupuesto.js?v=2026-11-25b"></script>
 <script>
 (function(){
 "use strict";
@@ -961,7 +961,7 @@ function viewPreguntas(){
   view.querySelectorAll("[data-cli]").forEach(b => b.onclick = () => openClient(b.dataset.cli, S.pq === "artcli" ? "articulos" : "facturas", S.pq === "artcli" ? "uds" : null));
 }
 
-const APP_VERSION = "25/11/2026 · Stock en el buscador";
+const APP_VERSION = "26/11/2026 · Presupuesto con pie como la factura";
 function viewCuenta(){
   const u = S.user || {};
   view.innerHTML = '<div class="acc"><div class="card"><h3>' + esc(u.nombre || "Tu cuenta") + '</h3><div class="count" style="margin:0">' + esc(u.email || "") + '</div></div>' +
@@ -1043,6 +1043,7 @@ function viewInicio(){
 /* ---------- Presupuestos ---------- */
 const PRE_SERIE = { "34": "B", "36": "P" };
 const preSerie = com => PRE_SERIE[com] || ("C" + com);
+const PRE_CONTACTO = { "34": { nom: "Breno Pedrosa", tel: "638 10 82 54", mail: "breno-hosteleria@iberlus.com" }, "36": { nom: "Paula Nieto", tel: "606 39 09 08", mail: "paulahosteleria@iberlus.com" } };
 const P = { list: null, loading: false, err: null, mode: "list", cur: null, draft: null, dirty: false };
 const r2 = n => Math.round((Number(n) || 0) * 100) / 100;
 const isoHoy = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
@@ -1150,7 +1151,7 @@ function prePdf(p, share, btn){
     const R = window.FACTURA_RES;
     if (!window.jspdf || !R || !window.presupuestoIberlus) return done("No disponible");
     btn.disabled = true;
-    const doc = window.presupuestoIberlus(window.jspdf.jsPDF, p, R);
+    const doc = window.presupuestoIberlus(window.jspdf.jsPDF, { ...p, contacto: PRE_CONTACTO[p.com] }, R);
     const c = p.cli || {};
     const name = ("Presupuesto_" + p.num + "_" + (c.name || c.fiscal || "")).normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, "_").replace(/[^A-Za-z0-9_.\-]/g, "").replace(/_+/g, "_").slice(0, 80) + ".pdf";
     const blob = doc.output("blob");
