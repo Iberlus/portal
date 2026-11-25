@@ -231,6 +231,45 @@ nav.bottom button[aria-selected="true"]{color:var(--accent)}
 .pcard textarea:focus{outline:2px solid var(--accent);outline-offset:1px}
 .sugrow{border-top:1px solid var(--line);padding-top:8px;font-size:13.5px}
 .client-head p{white-space:normal}
+.ns{display:none}
+@media (max-width:480px){nav.bottom button{padding:10px 1px;font-size:11px;min-width:0} nav.bottom .nl{display:none} nav.bottom .ns{display:inline}}
+@media (max-width:380px){nav.bottom button{font-size:10.5px}}
+.pe-top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.pe-date{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);font-weight:600}
+.pe-date input,.in,.pe-grid input{font:inherit;font-size:15px;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);min-width:0;width:100%}
+.pe-date input{width:auto;padding:6px 8px;font-size:14px}
+.in:focus,.pe-date input:focus{outline:2px solid var(--accent);outline-offset:0;border-color:transparent}
+.in.mono{font-family:var(--f-mono);text-transform:uppercase}
+.pe-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pe-grid .fld:first-child{grid-column:1/-1}
+.pe-sel{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;background:var(--bg);border:1px solid var(--line);border-left:3px solid var(--brand);border-radius:8px;padding:10px 12px}
+.pl{border:1px solid var(--line);border-radius:10px;padding:8px;display:flex;flex-direction:column;gap:6px;margin-bottom:8px;background:var(--bg)}
+.pl.txt{border-style:dashed}
+.pl textarea.in{resize:vertical;font-weight:600}
+.pl-r1{display:grid;grid-template-columns:118px minmax(0,1fr);gap:6px}
+.pl-code{position:relative}
+.pl-r2{display:grid;grid-template-columns:repeat(4,minmax(0,1fr)) minmax(76px,1.2fr);gap:6px;align-items:end}
+.pl-n{display:flex;flex-direction:column;gap:2px;font-size:11px;font-weight:600;color:var(--muted)}
+.pl-n .in{text-align:right;font-variant-numeric:tabular-nums;padding:8px 6px}
+.pl-tot{text-align:right;font-variant-numeric:tabular-nums;padding-bottom:8px;white-space:nowrap}
+.pl-tot small{display:block;font-size:11px;color:var(--muted);font-weight:600}
+.pl-act{display:flex;justify-content:flex-end;gap:6px}
+.pl-act button{border:1px solid var(--line);background:var(--surface);border-radius:6px;min-width:34px;height:28px;cursor:pointer;color:var(--muted);font-size:14px}
+.pl-act button:disabled{opacity:.35;cursor:default}
+.pl-act [data-del]{color:var(--bad)}
+.ac{position:absolute;left:0;top:100%;z-index:20;margin-top:2px;width:min(520px,calc(100vw - 48px));max-height:300px;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.18)}
+.ac-it{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;width:100%;border:0;border-top:1px solid var(--line);background:transparent;text-align:left;padding:9px 10px;cursor:pointer;font-size:13px}
+.ac-it:first-child{border-top:0}
+.ac-it.on,.ac-it:hover{background:var(--accent-soft)}
+.ac-it .c{font-family:var(--f-mono);font-weight:600;white-space:nowrap}
+.ac-it .dd{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ac-note{padding:9px 10px;font-size:12.5px;color:var(--muted)}
+.pe-btns{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:4px}
+.pe-foot{position:sticky;bottom:calc(64px + env(safe-area-inset-bottom,0px));z-index:4;margin-top:14px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px;box-shadow:0 -4px 16px rgba(0,0,0,.08)}
+.pe-tot{display:flex;flex-wrap:wrap;gap:2px 14px;font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.pe-tot b{color:var(--ink)}
+.pe-tot .big{font-size:15px;color:var(--ink);font-weight:600}
+@media (max-width:420px){.pl-r1{grid-template-columns:96px minmax(0,1fr)} .pl-r2{grid-template-columns:repeat(4,minmax(0,1fr))} .pl-tot{grid-column:1/-1;padding:0;display:flex;justify-content:space-between;align-items:baseline} .pl-tot small{display:inline}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 
@@ -282,6 +321,10 @@ nav.bottom button[aria-selected="true"]{color:var(--accent)}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>
       Facturación
     </button>
+    <button id="navPres" type="button" role="tab" aria-selected="false" data-sec="presupuestos">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4"/><path d="M9 12h6M9 16h6"/></svg>
+      <span class="nl">Presupuestos</span><span class="ns">Presup.</span>
+    </button>
     <button id="navAlmacen" type="button" role="tab" aria-selected="false" data-sec="almacen">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9.5 12 4l9 5.5V20H3z"/><path d="M7 20v-6h10v6"/><path d="M7 17h10"/></svg>
       Almacén
@@ -299,6 +342,7 @@ nav.bottom button[aria-selected="true"]{color:var(--accent)}
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="factura.js?v=2026-11-20b"></script>
+<script src="presupuesto.js?v=2026-11-25a"></script>
 <script>
 (function(){
 "use strict";
@@ -915,7 +959,7 @@ function viewPreguntas(){
   view.querySelectorAll("[data-cli]").forEach(b => b.onclick = () => openClient(b.dataset.cli, S.pq === "artcli" ? "articulos" : "facturas", S.pq === "artcli" ? "uds" : null));
 }
 
-const APP_VERSION = "20/11/2026 · Factura con dos descuentos";
+const APP_VERSION = "25/11/2026 · Presupuestos";
 function viewCuenta(){
   const u = S.user || {};
   view.innerHTML = '<div class="acc"><div class="card"><h3>' + esc(u.nombre || "Tu cuenta") + '</h3><div class="count" style="margin:0">' + esc(u.email || "") + '</div></div>' +
@@ -994,11 +1038,344 @@ function viewInicio(){
   view.querySelectorAll("[data-deb]").forEach(b => b.onclick = () => { S.sec = "clientes"; S.client = b.dataset.deb; S.ctab = "facturas"; S.year = +b.dataset.y; S.open = new Set(); S.scrollEnd = true; render(); });
 }
 
+/* ---------- Presupuestos ---------- */
+const PRE_SERIE = { "34": "B", "36": "P" };
+const preSerie = com => PRE_SERIE[com] || ("C" + com);
+const P = { list: null, loading: false, err: null, mode: "list", cur: null, draft: null, dirty: false };
+const r2 = n => Math.round((Number(n) || 0) * 100) / 100;
+const isoHoy = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
+const preFecha = s => fdate(dIso(s));
+const nStr = v => (v == null || v === "" || !+v) ? "" : String(v).replace(".", ",");
+let preKey = 0;
+const newLine = t => ({ k: ++preKey, t, code: "", desc: "", qty: t === "a" ? "1" : "", price: "", d1: "", d2: "" });
+const lineImp = l => l.t === "a" ? r2(toNum(l.qty) * toNum(l.price) * (1 - toNum(l.d1) / 100) * (1 - toNum(l.d2) / 100)) : 0;
+function preTotals(lines){ const base = r2(lines.reduce((s, l) => s + lineImp(l), 0)), iva = r2(base * 0.21); return { base, iva, total: r2(base + iva) }; }
+function comNomFor(com){
+  if (S.user && !S.user.admin && S.user.nombre) return S.user.nombre;
+  const b = document.querySelector('.seg [data-com="' + com + '"]');
+  return b ? b.textContent.replace(/\s*\(\d+\)\s*$/, "").trim() : "Comercial " + com;
+}
+const canShareFiles = (() => { try { return !!(navigator.canShare && navigator.canShare({ files: [new File([""], "x.pdf", { type: "application/pdf" })] })); } catch(e){ return false; } })();
+
+async function loadPres(){
+  if (P.loading) return;
+  P.loading = true; P.err = null;
+  try {
+    let q = db.collection("presupuestos");
+    if (!(S.user && S.user.admin)) q = q.where("com", "==", S.com);
+    const snap = await q.get();
+    const l = []; snap.forEach(d => l.push({ id: d.id, ...d.data() }));
+    l.sort((a, b) => (b.creado || 0) - (a.creado || 0));
+    P.list = l;
+  } catch(e){ P.err = fbErr(e); }
+  P.loading = false;
+  if (S.sec === "presupuestos" && P.mode === "list") viewPres(true);
+}
+function draftFrom(p, keep){
+  const d = { com: p.com, fecha: keep ? p.fecha : isoHoy(), cli: p.cli ? { ...p.cli } : null, cliMode: p.cli && p.cli.nuevo ? "nuevo" : "lista",
+    lines: (p.lines || []).map(l => ({ k: ++preKey, t: l.t, code: l.code || "", desc: l.desc || "", qty: nStr(l.qty), price: nStr(l.price), d1: nStr(l.d1), d2: nStr(l.d2) })) };
+  if (keep){ d.id = p.id; d.num = p.num; d.n = p.n; d.comNom = p.comNom; }
+  if (!d.lines.length) d.lines.push(newLine("a"));
+  return d;
+}
+function preLeave(){ if (P.mode === "edit" && P.dirty && !confirm("Hay cambios sin guardar. ¿Salir sin guardar?")) return false; return true; }
+
+function viewPres(force){
+  if (!S.user) return;
+  if (P.mode === "edit"){ if (!force && document.getElementById("preEd")) return; return preEditor(); }
+  if (P.mode === "ver" && P.cur) return preDetail();
+  P.mode = "list";
+  if (!P.list){
+    if (P.err){ view.innerHTML = '<div class="note err"><b>No se han podido leer los presupuestos.</b><br>' + esc(P.err) + '<br><button class="btn" id="retryP" type="button">Reintentar</button></div>';
+      document.getElementById("retryP").onclick = () => { P.err = null; loadPres(); viewPres(true); }; return; }
+    view.innerHTML = '<div class="note"><b>Leyendo presupuestos…</b></div>'; loadPres(); return;
+  }
+  const adm = S.user.admin;
+  let h = '<div class="toolbar"><button class="btn" id="preNew" type="button">+ Nuevo presupuesto</button><span class="sp"></span><span class="count" style="margin:0">' + P.list.length + ' presupuesto' + (P.list.length === 1 ? '' : 's') + '</span></div>';
+  h += '<div class="list">' + (P.list.length ? P.list.map(p => {
+    const c = p.cli || {};
+    return '<button type="button" class="row" data-pre="' + esc(p.id) + '"><div class="main"><div class="name">' + esc(p.num) + ' · ' + esc(c.name || c.fiscal || "") + '</div><div class="sub">' + preFecha(p.fecha) + (adm ? ' · ' + esc(p.comNom || "") : '') + (c.nuevo ? ' · cliente nuevo' : (c.code ? ' · ' + esc(c.code) : '')) + '</div></div><div class="right"><b style="color:var(--ink)">' + eur(p.total) + '</b><br>' + eur(p.base) + ' sin IVA</div>' + chev + '</button>';
+  }).join("") : '<div class="empty">Todavía no hay presupuestos. Pulsa <b>+ Nuevo presupuesto</b>.</div>') + '</div>';
+  view.innerHTML = h;
+  document.getElementById("preNew").onclick = () => {
+    P.draft = { com: S.com, fecha: isoHoy(), cli: null, cliMode: "lista", lines: [newLine("a")] };
+    P.mode = "edit"; P.dirty = false; viewPres(true); window.scrollTo(0, 0);
+  };
+  view.querySelectorAll("[data-pre]").forEach(b => b.onclick = () => { P.cur = P.list.find(p => p.id === b.dataset.pre); P.mode = "ver"; viewPres(true); window.scrollTo(0, 0); });
+}
+
+function preDetail(){
+  const p = P.cur, c = p.cli || {};
+  const sub = [c.code ? "Cód. " + c.code : (c.nuevo ? "Cliente nuevo" : ""), c.nif ? "NIF " + c.nif : "", c.pob].filter(Boolean).join(" · ");
+  let h = '<button class="back" id="preBack" type="button">‹ Presupuestos</button>';
+  h += '<div class="client-head"><h2>Presupuesto ' + esc(p.num) + '</h2><p>' + preFecha(p.fecha) + ' · ' + esc(p.comNom || "") + '</p></div>';
+  h += '<div class="pcard"><h3>' + esc(c.fiscal || c.name || "") + '</h3>' + (sub ? '<div class="count" style="margin:0">' + esc(sub) + '</div>' : '') + '</div>';
+  h += '<div class="list" style="margin-top:12px"><div class="lines" style="background:var(--surface)">' + (p.lines || []).map(l => l.t === "x"
+    ? '<div class="ln"><span class="d" style="font-weight:600;white-space:pre-wrap">' + esc(l.desc) + '</span><span></span></div>'
+    : '<div class="ln"><span class="d">' + esc(l.desc) + (l.code ? '<br><span class="c">' + esc(l.code) + '</span>' : '') + '</span><span class="p"><b>' + eur(l.imp) + '</b></span>' +
+      '<span class="q" style="grid-column:1/-1;text-align:left">' + num(l.qty) + ' uds × ' + eur(l.price) + (+l.d1 ? '<span class="dto">-' + num(l.d1) + ' %</span>' : '') + (+l.d2 ? '<span class="dto">-' + num(l.d2) + ' %</span>' : '') + '</span></div>').join("") + '</div></div>';
+  h += '<div class="sumbox" style="margin-top:12px"><div><div class="lbl">Total</div><div class="big">' + eur(p.total) + '</div></div><div class="count" style="margin:0;text-align:right">Base ' + eur(p.base) + '<br>IVA 21 % ' + eur(p.iva) + '</div></div>';
+  h += '<div class="pe-btns">' + (canShareFiles ? '<button class="btn" id="preShare" type="button">Compartir PDF</button>' : '') +
+    '<button class="btn" id="prePdf" type="button"' + (canShareFiles ? ' style="background:var(--slate)"' : '') + '>Descargar PDF</button>' +
+    '<button class="chipbtn" id="preEdit" type="button">Editar</button><button class="chipbtn" id="preDup" type="button">Duplicar</button></div>';
+  h += '<div class="count" style="margin-top:10px">' + (canShareFiles ? 'Compartir PDF abre WhatsApp, correo, etc. ' : '') + 'El presupuesto no pasa a Factusol.</div>';
+  view.innerHTML = h;
+  document.getElementById("preBack").onclick = () => { P.mode = "list"; P.cur = null; viewPres(true); };
+  const sh = document.getElementById("preShare"); if (sh) sh.onclick = () => prePdf(p, true, sh);
+  const dl = document.getElementById("prePdf"); dl.onclick = () => prePdf(p, false, dl);
+  document.getElementById("preEdit").onclick = () => { P.draft = draftFrom(p, true); P.mode = "edit"; P.dirty = false; viewPres(true); window.scrollTo(0, 0); };
+  document.getElementById("preDup").onclick = () => { P.draft = draftFrom(p, false); P.mode = "edit"; P.dirty = true; viewPres(true); window.scrollTo(0, 0); };
+}
+
+function prePdf(p, share, btn){
+  const old = btn.textContent;
+  const done = m => { btn.textContent = m; setTimeout(() => { btn.textContent = old; btn.disabled = false; }, 2200); };
+  try {
+    const R = window.FACTURA_RES;
+    if (!window.jspdf || !R || !window.presupuestoIberlus) return done("No disponible");
+    btn.disabled = true;
+    const doc = window.presupuestoIberlus(window.jspdf.jsPDF, p, R);
+    const c = p.cli || {};
+    const name = ("Presupuesto_" + p.num + "_" + (c.name || c.fiscal || "")).normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, "_").replace(/[^A-Za-z0-9_.\-]/g, "").replace(/_+/g, "_").slice(0, 80) + ".pdf";
+    const blob = doc.output("blob");
+    if (share && canShareFiles){
+      const file = new File([blob], name, { type: "application/pdf" });
+      navigator.share({ files: [file], title: "Presupuesto " + p.num }).then(() => done("Compartido"), () => { btn.textContent = old; btn.disabled = false; });
+      return;
+    }
+    const url = URL.createObjectURL(blob), a = document.createElement("a");
+    a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+    done("Descargado");
+  } catch(e){ done("No se pudo generar"); }
+}
+
+/* --- editor --- */
+function preEditor(){
+  const d = P.draft;
+  if (!S.arts && !S.artsLoading && !S.artsErr) loadArts();
+  let h = '<div id="preEd">';
+  h += '<button class="back" id="preBack" type="button">‹ Presupuestos</button>';
+  h += '<div class="client-head"><h2>' + (d.id ? 'Editar presupuesto ' + esc(d.num) : 'Nuevo presupuesto') + '</h2><p>' + (d.id ? '' : 'Serie ' + preSerie(d.com) + ' · el número se pone al guardar · ') + esc(d.comNom || comNomFor(d.com)) + '</p></div>';
+  h += '<div class="pcard"><div class="pe-top"><h3>Cliente</h3><label class="pe-date">Fecha <input type="date" id="preFecha" value="' + esc(d.fecha) + '"></label></div><div id="preCli"></div></div>';
+  h += '<div class="pcard"><h3>Líneas</h3><div id="preLines"></div><div class="pe-btns"><button class="chipbtn" id="addArt" type="button">+ Artículo</button><button class="chipbtn" id="addTxt" type="button">+ Texto</button></div></div>';
+  h += '<div class="pe-foot"><div class="pe-tot" id="preTot"></div><button class="btn" id="preSave" type="button">Guardar</button></div><div class="msg" id="preMsg" role="status"></div>';
+  h += '</div>';
+  view.innerHTML = h;
+  document.getElementById("preBack").onclick = () => { if (!preLeave()) return; P.dirty = false; P.draft = null; P.mode = d.id ? "ver" : "list"; if (!d.id) P.cur = null; viewPres(true); window.scrollTo(0, 0); };
+  document.getElementById("preFecha").onchange = e => { d.fecha = e.target.value || isoHoy(); P.dirty = true; };
+  document.getElementById("addArt").onclick = () => { d.lines.push(newLine("a")); P.dirty = true; preLinesRender(d.lines.length - 1, "code"); };
+  document.getElementById("addTxt").onclick = () => { d.lines.push(newLine("x")); P.dirty = true; preLinesRender(d.lines.length - 1, "desc"); };
+  document.getElementById("preSave").onclick = preSave;
+  preCliRender(); preLinesRender(); preTotRender();
+  preLinesEvents();
+}
+
+function preCliRender(focus){
+  const d = P.draft, box = document.getElementById("preCli"); if (!box) return;
+  const seg = '<div class="years"><button class="chipbtn" type="button" data-cm="lista" aria-pressed="' + (d.cliMode === "lista") + '">De mis clientes</button><button class="chipbtn" type="button" data-cm="nuevo" aria-pressed="' + (d.cliMode === "nuevo") + '">Cliente nuevo</button></div>';
+  let h = '';
+  if (d.cliMode === "lista" && d.cli){
+    const c = d.cli;
+    h = '<div class="pe-sel"><div><b>' + esc(c.name || c.fiscal) + '</b>' + (fisc(c) ? '<div class="count" style="margin:0">' + esc(c.fiscal) + '</div>' : '') +
+      '<div class="count" style="margin:0">' + esc([c.code, c.nif ? "NIF " + c.nif : "", c.pob].filter(Boolean).join(" · ")) + '</div></div><button class="linkbtn" type="button" id="cliChg">Cambiar</button></div>';
+  } else if (d.cliMode === "lista"){
+    h = seg + '<div class="search" style="margin:0"><input id="cliQ" type="search" placeholder="Buscar por código o nombre" autocomplete="off" aria-label="Buscar cliente" value="' + esc(d.cliQ || "") + '"></div><div id="cliRes"></div>';
+  } else {
+    const c = d.cli || {};
+    const f = (k, lbl, req, type, im) => '<label class="fld">' + lbl + (req ? ' *' : '') + '<input data-cf="' + k + '" type="' + (type || "text") + '"' + (im ? ' inputmode="' + im + '"' : '') + ' value="' + esc(c[k] || "") + '" autocomplete="off"></label>';
+    h = seg + '<div class="pe-grid">' + f("name", "Nombre", true) + f("nif", "NIF") + f("pob", "Población") + f("tel", "Teléfono", false, "tel", "tel") + f("email", "Correo", false, "email", "email") + '</div>';
+  }
+  box.innerHTML = h;
+  box.querySelectorAll("[data-cm]").forEach(b => b.onclick = () => {
+    if (d.cliMode === b.dataset.cm) return;
+    d.cliMode = b.dataset.cm; d.cli = d.cliMode === "nuevo" ? { nuevo: true, name: "", nif: "", pob: "", tel: "", email: "" } : null; P.dirty = true;
+    preCliRender(true);
+  });
+  const chg = document.getElementById("cliChg"); if (chg) chg.onclick = () => { d.cli = null; d.cliQ = ""; P.dirty = true; preCliRender(true); };
+  box.querySelectorAll("[data-cf]").forEach(i => i.oninput = () => { d.cli[i.dataset.cf] = i.value; P.dirty = true; });
+  const q = document.getElementById("cliQ");
+  if (q){
+    let t; q.oninput = () => { clearTimeout(t); t = setTimeout(() => { d.cliQ = q.value; preCliRes(); }, 120); };
+    preCliRes();
+    if (focus) q.focus();
+  } else if (focus){ const n = box.querySelector('[data-cf="name"]'); if (n) n.focus(); }
+}
+function preCliRes(){
+  const d = P.draft, box = document.getElementById("cliRes"); if (!box) return;
+  if (!S.data){ box.innerHTML = '<div class="count" style="margin:8px 0 0">Cargando tus clientes…</div>'; return; }
+  const words = norm(d.cliQ).split(/\s+/).filter(Boolean);
+  if (!words.length){ box.innerHTML = '<div class="count" style="margin:8px 0 0">Escribe el código o parte del nombre. Si no está, pulsa <b>Cliente nuevo</b>.</div>'; return; }
+  const mine = S.data.clients.filter(c => c.com === d.com);
+  const l = mine.filter(c => { const k = norm(c.code + " " + c.name + " " + c.fiscal + " " + c.pob); return words.every(w => k.includes(w)); })
+    .sort((a, b) => (b.last || 0) - (a.last || 0)).slice(0, 15);
+  box.innerHTML = '<div class="list" style="margin-top:8px">' + (l.length ? l.map(c => '<button type="button" class="row" data-pc="' + esc(c.code) + '"><div class="main"><div class="name">' + esc(c.name) + '</div><div class="sub">' + esc([c.code, fisc(c), c.pob].filter(Boolean).join(" · ")) + '</div></div></button>').join("")
+    : '<div class="empty">Ningún cliente coincide. Pulsa <b>Cliente nuevo</b> para escribirlo a mano.</div>') + '</div>';
+  box.querySelectorAll("[data-pc]").forEach(b => b.onclick = () => {
+    const c = S.data.byCode.get(b.dataset.pc); if (!c) return;
+    d.cli = { code: c.code, name: c.name, fiscal: c.fiscal, nif: c.nif, pob: c.pob, cp: c.cp, prov: c.prov }; P.dirty = true;
+    preCliRender();
+    const first = document.querySelector('#preLines [data-f="code"]'); if (first && !first.value) first.focus();
+  });
+}
+
+const NAV = { a: ["code", "desc", "qty", "price", "d1", "d2"], x: ["desc"] };
+function preLineHtml(l, i, n){
+  const act = '<div class="pl-act"><button type="button" data-mv="-1" aria-label="Subir"' + (i ? '' : ' disabled') + '>↑</button><button type="button" data-mv="1" aria-label="Bajar"' + (i < n - 1 ? '' : ' disabled') + '>↓</button><button type="button" data-del aria-label="Borrar línea">✕</button></div>';
+  if (l.t === "x") return '<div class="pl txt" data-k="' + l.k + '"><textarea class="in" data-f="desc" rows="2" placeholder="Texto, por ejemplo: Forma de pago: transferencia a la entrega">' + esc(l.desc) + '</textarea>' + act + '</div>';
+  const nf = (f, lbl) => '<label class="pl-n">' + lbl + '<input class="in" data-f="' + f + '" inputmode="decimal" enterkeyhint="next" autocomplete="off" value="' + esc(l[f]) + '"></label>';
+  return '<div class="pl" data-k="' + l.k + '"><div class="pl-r1"><div class="pl-code"><input class="in mono" data-f="code" placeholder="Código" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="next" value="' + esc(l.code) + '"><div class="ac" hidden></div></div>' +
+    '<input class="in" data-f="desc" placeholder="Descripción" enterkeyhint="next" autocomplete="off" value="' + esc(l.desc) + '"></div>' +
+    '<div class="pl-r2">' + nf("qty", "Uds") + nf("price", "Precio") + nf("d1", "Dto 1 %") + nf("d2", "Dto 2 %") + '<div class="pl-tot"><small>Total</small><b data-tot>' + eur(lineImp(l)) + '</b></div></div>' + act + '</div>';
+}
+function preLinesRender(fi, ff){
+  const d = P.draft, box = document.getElementById("preLines"); if (!box) return;
+  box.innerHTML = d.lines.length ? d.lines.map((l, i) => preLineHtml(l, i, d.lines.length)).join("") : '<div class="empty">Sin líneas. Añade un artículo o un texto.</div>';
+  preTotRender();
+  if (fi != null && ff){ const row = box.children[fi]; const el = row && row.querySelector('[data-f="' + ff + '"]'); if (el){ el.focus(); el.scrollIntoView({ block: "center", behavior: "smooth" }); } }
+}
+function preTotRender(){
+  const t = preTotals(P.draft.lines), el = document.getElementById("preTot"); if (!el) return;
+  el.innerHTML = '<span>Base <b>' + eur(t.base) + '</b></span><span>IVA 21 % <b>' + eur(t.iva) + '</b></span><span class="big">Total <b>' + eur(t.total) + '</b></span>';
+}
+const lineOf = el => { const row = el.closest(".pl"); if (!row) return {}; const i = [...row.parentNode.children].indexOf(row); return { row, i, l: P.draft.lines[i] }; };
+function acMatches(q){
+  q = q.trim().toUpperCase(); if (!q || !S.arts) return [];
+  const m = [];
+  for (const a of S.arts){ if (!a.cu) a.cu = a.code.toUpperCase(); if (a.cu.startsWith(q)) m.push(a); }
+  return m.sort((a, b) => (a.cu === q ? -1 : b.cu === q ? 1 : a.cu.localeCompare(b.cu, "es", { numeric: true })));
+}
+function acShow(inp){
+  const ac = inp.parentNode.querySelector(".ac"); if (!ac) return;
+  const q = inp.value.trim();
+  if (!q){ ac.hidden = true; ac.innerHTML = ""; return; }
+  if (!S.arts){ ac.hidden = false; ac.innerHTML = '<div class="ac-note">' + (S.artsErr ? 'No se pudo leer el almacén' : 'Cargando artículos…') + '</div>'; return; }
+  const m = acMatches(q);
+  ac._m = m; ac._h = 0;
+  if (!m.length){ ac.hidden = false; ac.innerHTML = '<div class="ac-note">No existe ese código: escribe la descripción a mano.</div>'; return; }
+  ac.hidden = false;
+  ac.innerHTML = m.slice(0, 40).map((a, k) => '<button type="button" class="ac-it' + (k ? '' : ' on') + '" data-ac="' + k + '" tabindex="-1"><span class="c">' + esc(a.code) + '</span><span class="dd">' + esc(a.desc) + '</span></button>').join("") +
+    (m.length > 40 ? '<div class="ac-note">' + m.length.toLocaleString("es-ES") + ' artículos · sigue escribiendo para acotar</div>' : '');
+}
+function acHide(inp){ const ac = inp && inp.parentNode.querySelector(".ac"); if (ac){ ac.hidden = true; ac.innerHTML = ""; ac._m = null; } }
+function acPick(inp, k){
+  const ac = inp.parentNode.querySelector(".ac"), a = ac && ac._m && ac._m[k]; if (!a) return false;
+  const { row, l } = lineOf(inp);
+  l.code = a.code; l.desc = a.desc; inp.value = a.code; row.querySelector('[data-f="desc"]').value = a.desc; P.dirty = true;
+  acHide(inp);
+  const q = row.querySelector('[data-f="qty"]'); q.focus();
+  return true;
+}
+function preFocusNext(el){
+  const { row, i, l } = lineOf(el); if (!l) return;
+  const order = NAV[l.t], f = el.dataset.f, k = order.indexOf(f);
+  if (k < order.length - 1){ row.querySelector('[data-f="' + order[k + 1] + '"]').focus(); return; }
+  const d = P.draft;
+  if (i === d.lines.length - 1){ d.lines.push(newLine("a")); P.dirty = true; preLinesRender(i + 1, "code"); return; }
+  const nx = document.getElementById("preLines").children[i + 1];
+  const nl = d.lines[i + 1]; const t = nx && nx.querySelector('[data-f="' + NAV[nl.t][0] + '"]'); if (t) t.focus();
+}
+function preLinesEvents(){
+  const box = document.getElementById("preLines");
+  box.addEventListener("input", e => {
+    const el = e.target, f = el.dataset.f; if (!f) return;
+    const { row, l } = lineOf(el); if (!l) return;
+    l[f] = el.value; P.dirty = true;
+    if (f === "code") acShow(el);
+    if (["qty", "price", "d1", "d2"].includes(f)){ row.querySelector("[data-tot]").textContent = eur(lineImp(l)); preTotRender(); }
+  });
+  box.addEventListener("focusin", e => {
+    const el = e.target; if (!el.dataset || !el.dataset.f) return;
+    if (el.tagName === "INPUT" && el.dataset.f !== "desc"){ const v0 = el.value, sel = () => { try { if (document.activeElement === el && el.value === v0){ el.select(); el.setSelectionRange(0, el.value.length); } } catch(x){} }; sel(); setTimeout(sel, 0); }
+    if (el.dataset.f === "code" && el.value) acShow(el);
+  });
+  box.addEventListener("focusout", e => {
+    const el = e.target, f = el.dataset && el.dataset.f; if (!f) return;
+    if (f === "code") setTimeout(() => { if (document.activeElement !== el) acHide(el); }, 200);
+    if (["qty", "price", "d1", "d2"].includes(f) && el.value.trim()){
+      const { l } = lineOf(el); const v = toNum(el.value); const s = v ? String(Math.round(v * 10000) / 10000).replace(".", ",") : "";
+      if (l){ l[f] = s; el.value = s; }
+    }
+  });
+  box.addEventListener("keydown", e => {
+    const el = e.target, f = el.dataset && el.dataset.f; if (!f) return;
+    if (f === "code"){
+      const ac = el.parentNode.querySelector(".ac");
+      if (ac && !ac.hidden && ac._m && ac._m.length){
+        const items = ac.querySelectorAll(".ac-it");
+        if (e.key === "ArrowDown" || e.key === "ArrowUp"){ e.preventDefault(); ac._h = Math.max(0, Math.min(items.length - 1, ac._h + (e.key === "ArrowDown" ? 1 : -1)));
+          items.forEach((b, k) => b.classList.toggle("on", k === ac._h)); items[ac._h].scrollIntoView({ block: "nearest" }); return; }
+        if (e.key === "Enter"){ e.preventDefault(); acPick(el, ac._h); return; }
+        if (e.key === "Escape"){ acHide(el); return; }
+      }
+    }
+    if (e.key === "Enter" && el.tagName === "INPUT"){ e.preventDefault(); acHide(el); preFocusNext(el); }
+  });
+  box.addEventListener("pointerdown", e => { if (e.target.closest(".ac-it")) e.preventDefault(); });
+  box.addEventListener("mouseup", e => { const el = e.target; if (el.tagName === "INPUT" && el.dataset.f && el.dataset.f !== "desc" && el._fresh){ e.preventDefault(); } el._fresh = false; });
+  box.addEventListener("mousedown", e => { const el = e.target; if (el.tagName === "INPUT" && el.dataset.f) el._fresh = document.activeElement !== el; });
+  box.addEventListener("click", e => {
+    const it = e.target.closest(".ac-it");
+    if (it){ const inp = it.closest(".pl-code").querySelector('[data-f="code"]'); acPick(inp, +it.dataset.ac); return; }
+    const mv = e.target.closest("[data-mv]"), del = e.target.closest("[data-del]");
+    if (!mv && !del) return;
+    const { i, l } = lineOf(e.target); if (!l) return;
+    const d = P.draft;
+    if (del){
+      if ((l.code || l.desc || l.price) && !confirm("¿Borrar esta línea?")) return;
+      d.lines.splice(i, 1); P.dirty = true; preLinesRender(); return;
+    }
+    const j = i + +mv.dataset.mv; if (j < 0 || j >= d.lines.length) return;
+    [d.lines[i], d.lines[j]] = [d.lines[j], d.lines[i]]; P.dirty = true; preLinesRender();
+    const b = document.getElementById("preLines").children[j]; const bt = b && b.querySelector('[data-mv="' + mv.dataset.mv + '"]'); if (bt && !bt.disabled) bt.focus();
+  });
+}
+
+async function preSave(){
+  const d = P.draft, msg = document.getElementById("preMsg"), btn = document.getElementById("preSave");
+  const err = t => { msg.className = "msg err"; msg.textContent = t; };
+  const c = d.cli;
+  if (!c || !str(c.name)){ err(d.cliMode === "nuevo" ? "Escribe el nombre del cliente." : "Elige un cliente o pulsa «Cliente nuevo»."); return; }
+  const lines = d.lines.filter(l => l.t === "x" ? str(l.desc) : (str(l.code) || str(l.desc) || toNum(l.price)))
+    .map(l => l.t === "x" ? { t: "x", desc: str(l.desc) } : { t: "a", code: str(l.code), desc: str(l.desc), qty: toNum(l.qty), price: toNum(l.price), d1: toNum(l.d1), d2: toNum(l.d2), imp: lineImp(l) });
+  if (!lines.some(l => l.t === "a")){ err("Añade al menos un artículo."); return; }
+  const tot = preTotals(lines);
+  const cli = c.nuevo ? { nuevo: true, name: str(c.name), nif: str(c.nif), pob: str(c.pob), tel: str(c.tel), email: str(c.email) }
+    : { code: str(c.code), name: str(c.name), fiscal: str(c.fiscal), nif: str(c.nif), pob: str(c.pob), cp: str(c.cp), prov: str(c.prov) };
+  const data = { fecha: d.fecha || isoHoy(), cli, lines, base: tot.base, iva: tot.iva, total: tot.total, mod: Date.now(), modPor: S.user.email };
+  btn.disabled = true; btn.textContent = "Guardando…"; msg.className = "msg"; msg.textContent = "";
+  try {
+    let saved;
+    if (d.id){
+      await db.collection("presupuestos").doc(d.id).update(data);
+      const old = (P.list || []).find(p => p.id === d.id) || P.cur || {};
+      saved = { ...old, ...data, id: d.id };
+    } else {
+      const com = d.com, comNom = comNomFor(com), cRef = db.collection("contadores").doc(com);
+      saved = await db.runTransaction(async tx => {
+        const cs = await tx.get(cRef);
+        const n = ((cs.exists && +cs.data().n) || 0) + 1;
+        const id = com + "-" + n, doc = { ...data, com, n, num: preSerie(com) + "-" + n, comNom, autor: S.user.email, creado: Date.now() };
+        tx.set(cRef, { n }, { merge: true });
+        tx.set(db.collection("presupuestos").doc(id), doc);
+        return { ...doc, id };
+      });
+    }
+    if (P.list){ const k = P.list.findIndex(p => p.id === saved.id); if (k >= 0) P.list[k] = saved; else P.list.unshift(saved); }
+    P.cur = saved; P.draft = null; P.dirty = false; P.mode = "ver"; viewPres(true); window.scrollTo(0, 0);
+  } catch(e){
+    btn.disabled = false; btn.textContent = "Guardar";
+    const code = e && e.code || "";
+    err(code === "unavailable" ? "Sin conexión. Revisa internet y vuelve a pulsar Guardar." : code === "permission-denied" ? "No tienes permiso para guardar presupuestos. Avisa a Dani." : "No se pudo guardar (" + (code || (e && e.message) || "error") + ").");
+  }
+}
+
 function render(){
   if (S.sec === "cuenta") return viewCuenta();
   document.querySelectorAll(".seg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.com === S.com));
   document.querySelectorAll("nav.bottom button").forEach(b => b.setAttribute("aria-selected", b.dataset.sec === S.sec));
   if (S.sec === "almacen") return viewAlmacen();
+  if (S.sec === "presupuestos") return viewPres();
   if (!S.data) return;
   if (S.sec === "inicio") return viewInicio();
   if (S.sec === "preguntas") return viewPreguntas();
@@ -1009,7 +1386,7 @@ function render(){
 document.querySelectorAll(".seg button").forEach(b => b.onclick = () => { if (!S.user || !S.user.admin || S.com === b.dataset.com) return; S.com = b.dataset.com; S.client = null; S.q = ""; S.fopen = new Set(); S.fopenInv = new Set(); try{ localStorage.setItem("iberlus_com", S.com); }catch(e){} render(); loadAll(); });
 document.getElementById("userBtn").onclick = () => { S.sec = S.sec === "cuenta" ? "inicio" : "cuenta"; render(); window.scrollTo(0,0); };
 view.addEventListener("click", e => { const b = e.target.closest("[data-dl]"); if (b) downloadInv(b.dataset.dl, b); });
-document.querySelectorAll("nav.bottom button").forEach(b => b.onclick = () => { S.sec = b.dataset.sec; render(); window.scrollTo(0,0); });
+document.querySelectorAll("nav.bottom button").forEach(b => b.onclick = () => { if (S.sec === "presupuestos" && b.dataset.sec === "presupuestos" && P.mode !== "list"){ if (!preLeave()) return; P.mode = "list"; P.draft = null; P.cur = null; P.dirty = false; viewPres(true); window.scrollTo(0,0); return; } S.sec = b.dataset.sec; render(); window.scrollTo(0,0); });
 
 const loginEl = document.getElementById("login"), appEl = document.getElementById("app"), lgMsg = document.getElementById("lgMsg");
 document.getElementById("loginForm").onsubmit = async ev => {
@@ -1030,7 +1407,7 @@ document.getElementById("lgForgot").onclick = async () => {
   catch(e){ lgMsg.className = "msg err"; lgMsg.textContent = "No se pudo enviar el correo (" + (e.code || "error") + ")."; }
 };
 auth.onAuthStateChanged(async u => {
-  S.data = null; S.arts = null; S.artsErr = null; S.user = null; S.client = null; S.sec = "inicio"; S.compras = null; S.comprasErr = null; S.artOpen = null; S.hmore = {};
+  S.data = null; S.arts = null; S.artsErr = null; S.user = null; S.client = null; S.sec = "inicio"; S.compras = null; S.comprasErr = null; S.artOpen = null; S.hmore = {}; P.list = null; P.err = null; P.mode = "list"; P.cur = null; P.draft = null; P.dirty = false;
   if (!u){ appEl.hidden = true; loginEl.hidden = false; return; }
   loginEl.hidden = true; appEl.hidden = false;
   view.innerHTML = '<div class="note"><b>Comprobando tu acceso…</b></div>';
