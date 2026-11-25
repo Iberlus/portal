@@ -257,6 +257,7 @@ nav.bottom button[aria-selected="true"]{color:var(--accent)}
 .pl-act button{border:1px solid var(--line);background:var(--surface);border-radius:6px;min-width:34px;height:28px;cursor:pointer;color:var(--muted);font-size:14px}
 .pl-act button:disabled{opacity:.35;cursor:default}
 .pl-act [data-del]{color:var(--bad)}
+.chipbtn.pe-del{color:var(--bad);border-color:var(--bad)}
 .ac{position:absolute;left:0;top:100%;z-index:20;margin-top:2px;width:min(520px,calc(100vw - 48px));max-height:300px;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.18)}
 .ac-it{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;width:100%;border:0;border-top:1px solid var(--line);background:transparent;text-align:left;padding:9px 10px;cursor:pointer;font-size:13px}
 .ac-it:first-child{border-top:0}
@@ -959,7 +960,7 @@ function viewPreguntas(){
   view.querySelectorAll("[data-cli]").forEach(b => b.onclick = () => openClient(b.dataset.cli, S.pq === "artcli" ? "articulos" : "facturas", S.pq === "artcli" ? "uds" : null));
 }
 
-const APP_VERSION = "25/11/2026 · Presupuestos";
+const APP_VERSION = "25/11/2026 · Borrar presupuestos";
 function viewCuenta(){
   const u = S.user || {};
   view.innerHTML = '<div class="acc"><div class="card"><h3>' + esc(u.nombre || "Tu cuenta") + '</h3><div class="count" style="margin:0">' + esc(u.email || "") + '</div></div>' +
@@ -1117,13 +1118,27 @@ function preDetail(){
   h += '<div class="sumbox" style="margin-top:12px"><div><div class="lbl">Total</div><div class="big">' + eur(p.total) + '</div></div><div class="count" style="margin:0;text-align:right">Base ' + eur(p.base) + '<br>IVA 21 % ' + eur(p.iva) + '</div></div>';
   h += '<div class="pe-btns">' + (canShareFiles ? '<button class="btn" id="preShare" type="button">Compartir PDF</button>' : '') +
     '<button class="btn" id="prePdf" type="button"' + (canShareFiles ? ' style="background:var(--slate)"' : '') + '>Descargar PDF</button>' +
-    '<button class="chipbtn" id="preEdit" type="button">Editar</button><button class="chipbtn" id="preDup" type="button">Duplicar</button></div>';
+    '<button class="chipbtn" id="preEdit" type="button">Editar</button><button class="chipbtn" id="preDup" type="button">Duplicar</button><span class="sp" style="flex:1"></span><button class="chipbtn pe-del" id="preDel" type="button">Borrar</button></div><div class="msg" id="preDelMsg" role="status"></div>';
   h += '<div class="count" style="margin-top:10px">' + (canShareFiles ? 'Compartir PDF abre WhatsApp, correo, etc. ' : '') + 'El presupuesto no pasa a Factusol.</div>';
   view.innerHTML = h;
   document.getElementById("preBack").onclick = () => { P.mode = "list"; P.cur = null; viewPres(true); };
   const sh = document.getElementById("preShare"); if (sh) sh.onclick = () => prePdf(p, true, sh);
   const dl = document.getElementById("prePdf"); dl.onclick = () => prePdf(p, false, dl);
   document.getElementById("preEdit").onclick = () => { P.draft = draftFrom(p, true); P.mode = "edit"; P.dirty = false; viewPres(true); window.scrollTo(0, 0); };
+  document.getElementById("preDel").onclick = async () => {
+    if (!confirm("¿Borrar el presupuesto " + p.num + "? No se puede deshacer.")) return;
+    const b = document.getElementById("preDel"), m = document.getElementById("preDelMsg");
+    b.disabled = true; b.textContent = "Borrando…";
+    try {
+      await db.collection("presupuestos").doc(p.id).delete();
+      if (P.list) P.list = P.list.filter(x => x.id !== p.id);
+      P.cur = null; P.mode = "list"; viewPres(true); window.scrollTo(0, 0);
+    } catch(e){
+      b.disabled = false; b.textContent = "Borrar"; m.className = "msg err";
+      const c = e && e.code || "";
+      m.textContent = c === "permission-denied" ? "No se pudo borrar: falta publicar las reglas nuevas de Firebase. Avisa a Dani." : c === "unavailable" ? "Sin conexión. Revisa internet y vuelve a intentarlo." : "No se pudo borrar (" + (c || (e && e.message) || "error") + ").";
+    }
+  };
   document.getElementById("preDup").onclick = () => { P.draft = draftFrom(p, false); P.mode = "edit"; P.dirty = true; viewPres(true); window.scrollTo(0, 0); };
 }
 
